@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from edgeguard.schema import Evidence
+from bastion.schema import Evidence
 
 MAX_EXPLANATION_CHARS = 600
 _URLISH = re.compile(r"(https?://\S+|www\.\S+|\b[a-z0-9-]+\.(?:com|in|net|org|xyz|ly|io)\b)", re.I)

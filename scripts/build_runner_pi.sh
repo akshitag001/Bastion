@@ -48,4 +48,4 @@ cmake --build cmake-out/examples/models/llama -j"$JOBS" --config Release
 mkdir -p "$ROOT/models/llama"
 cp cmake-out/examples/models/llama/llama_main "$ROOT/models/llama/llama_main"
 echo "Runner -> $ROOT/models/llama/llama_main"
-echo "Check:  cd $ROOT && PYTHONPATH=src python3 -m edgeguard.cli status"
+echo "Check:  cd $ROOT && PYTHONPATH=src python3 -m bastion.cli status"

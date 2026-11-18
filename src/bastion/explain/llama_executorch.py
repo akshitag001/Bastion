@@ -29,12 +29,12 @@ ROOT = Path(__file__).resolve().parents[3]
 
 @dataclass
 class LlamaConfig:
-    runner: str = os.environ.get("EDGEGUARD_LLAMA_RUNNER", str(ROOT / "models" / "llama" / "llama_main"))
-    model_path: str = os.environ.get("EDGEGUARD_LLAMA_PTE", str(ROOT / "models" / "llama" / "llama3_2_1b_8da4w.pte"))
-    tokenizer_path: str = os.environ.get("EDGEGUARD_LLAMA_TOKENIZER", str(ROOT / "models" / "llama" / "tokenizer.model"))
-    seq_len: int = int(os.environ.get("EDGEGUARD_LLAMA_SEQ_LEN", "512"))   # prompt + generated tokens
+    runner: str = os.environ.get("BASTION_LLAMA_RUNNER", str(ROOT / "models" / "llama" / "llama_main"))
+    model_path: str = os.environ.get("BASTION_LLAMA_PTE", str(ROOT / "models" / "llama" / "llama3_2_1b_8da4w.pte"))
+    tokenizer_path: str = os.environ.get("BASTION_LLAMA_TOKENIZER", str(ROOT / "models" / "llama" / "tokenizer.model"))
+    seq_len: int = int(os.environ.get("BASTION_LLAMA_SEQ_LEN", "512"))   # prompt + generated tokens
     temperature: float = 0.0          # greedy: stable, reproducible explanations
-    cpu_threads: int = int(os.environ.get("EDGEGUARD_LLAMA_THREADS", "4"))  # Pi 5 has 4 Cortex-A76 cores
+    cpu_threads: int = int(os.environ.get("BASTION_LLAMA_THREADS", "4"))  # Pi 5 has 4 Cortex-A76 cores
     timeout_s: int = 120
 
 

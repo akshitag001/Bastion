@@ -1,9 +1,9 @@
 """Command-line interface.
 
-  edgeguard scan-url "http://..."
-  edgeguard scan-sms "Your account will be blocked..."
-  edgeguard demo                 # runs the handwritten demo samples
-  edgeguard status               # shows which models / Llama runtime are available
+  bastion scan-url "http://..."
+  bastion scan-sms "Your account will be blocked..."
+  bastion demo                 # runs the handwritten demo samples
+  bastion status               # shows which models / Llama runtime are available
 Add --json for machine-readable output, --no-llm to skip the Llama explainer.
 """
 
@@ -14,7 +14,7 @@ import json
 import sys
 from pathlib import Path
 
-from edgeguard.pipeline import EdgeGuard, Report
+from bastion.pipeline import Bastion, Report
 
 COLORS = {"SAFE": "\033[92m", "SUSPICIOUS": "\033[93m", "MALICIOUS": "\033[91m"}
 RESET, BOLD, DIM = "\033[0m", "\033[1m", "\033[2m"
@@ -43,7 +43,7 @@ def _print(report: Report, as_json: bool) -> None:
     print(f"  {DIM if color else ''}[{report.explainer}; {report.explainer_note}; {t}]{reset}")
 
 
-def _status(eg: EdgeGuard) -> None:
+def _status(eg: Bastion) -> None:
     print(f"URL detector : {eg.url.model_name if eg.url.model else 'rules-only (train with training/train_url.py)'}")
     print(f"SMS detector : {eg.sms.model_name if eg.sms.model else 'rules-only (train with training/train_sms.py)'}")
     if eg.llm:
@@ -52,7 +52,7 @@ def _status(eg: EdgeGuard) -> None:
         print(f"  runner={eg.llm.cfg.runner}\n  pte={eg.llm.cfg.model_path}\n  tokenizer={eg.llm.cfg.tokenizer_path}")
 
 
-def _demo(eg: EdgeGuard, as_json: bool, explain: bool) -> None:
+def _demo(eg: Bastion, as_json: bool, explain: bool) -> None:
     samples = ROOT / "data" / "samples"
     print(f"{BOLD}Demo samples are HANDWRITTEN for demonstration only - not benchmark data.{RESET}")
     for line in (samples / "demo_urls.txt").read_text(encoding="utf-8").splitlines():
@@ -66,7 +66,7 @@ def _demo(eg: EdgeGuard, as_json: bool, explain: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="edgeguard", description="Offline on-device phishing & scam detector")
+    ap = argparse.ArgumentParser(prog="bastion", description="Offline on-device phishing & scam detector")
     ap.add_argument("--json", action="store_true", help="print JSON output")
     ap.add_argument("--no-llm", action="store_true", help="skip Llama explainer (template explanation)")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status")
     a = ap.parse_args(argv)
 
-    eg = EdgeGuard(use_llm=not a.no_llm)
+    eg = Bastion(use_llm=not a.no_llm)
     if a.cmd == "scan-url":
         _print(eg.scan_url(a.url), a.json)
     elif a.cmd == "scan-sms":

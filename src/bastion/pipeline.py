@@ -9,12 +9,12 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-from edgeguard.advice.remediation import advice_for
-from edgeguard.detectors.sms_detector import SmsDetector
-from edgeguard.detectors.url_detector import UrlDetector
-from edgeguard.explain import fallback_templates, guard, prompts
-from edgeguard.explain.llama_executorch import LlamaExplainer
-from edgeguard.schema import Evidence
+from bastion.advice.remediation import advice_for
+from bastion.detectors.sms_detector import SmsDetector
+from bastion.detectors.url_detector import UrlDetector
+from bastion.explain import fallback_templates, guard, prompts
+from bastion.explain.llama_executorch import LlamaExplainer
+from bastion.schema import Evidence
 
 
 @dataclass
@@ -40,7 +40,7 @@ class Report:
         }
 
 
-class EdgeGuard:
+class Bastion:
     def __init__(self, use_llm: bool = True, url_model=..., sms_model=...):
         url_kwargs = {} if url_model is ... else {"model_path": url_model}
         sms_kwargs = {} if sms_model is ... else {"model_path": sms_model}

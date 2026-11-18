@@ -1,7 +1,7 @@
 # Progress
 
 ## v0.1 (16 Nov 2026): done
-- [x] Repo scaffold, packaging (`pip install -e .`, `edgeguard` CLI), setup script
+- [x] Repo scaffold, packaging (`pip install -e .`, `bastion` CLI), setup script
 - [x] URL lexical feature extractor (27 features, offline, no DNS/WHOIS)
 - [x] SMS cleaning + social-engineering indicators + URL extraction (embedded URLs scored by URL detector)
 - [x] Rule engines for URL and SMS (work with no trained model)
@@ -17,7 +17,7 @@
 
 ## Next (in priority order)
 1. **M1: Llama 3.2 1B -> ExecuTorch .pte, running on the Pi** (`scripts/export_llama.sh`, `scripts/build_runner_pi.sh`).
-   Verify commands vs current docs. Then `edgeguard status` = READY, and `bench_edge.py --llm`.
+   Verify commands vs current docs. Then `bastion status` = READY, and `bench_edge.py --llm`.
 2. Download datasets, train SMS + URL models, review the leak probe, commit JSON reports.
 3. Tune thresholds on validation data (recall-first), calibrate confidence.
 4. Benchmarks on Pi vs laptop; fill docs/HARDWARE_MAPPING.md.

@@ -15,6 +15,6 @@ pip install -e .
 echo
 echo "Setup done. Try:"
 echo "  source .venv/bin/activate"
-echo "  edgeguard status"
-echo "  edgeguard demo"
+echo "  bastion status"
+echo "  bastion demo"
 echo "  pytest -q"

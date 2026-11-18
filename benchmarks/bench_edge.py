@@ -22,7 +22,7 @@ import psutil
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from edgeguard.pipeline import EdgeGuard  # noqa: E402
+from bastion.pipeline import Bastion  # noqa: E402
 
 
 def pct(xs, p):
@@ -56,7 +56,7 @@ def main():
     proc = psutil.Process(os.getpid())
     rss0 = proc.memory_info().rss
     t0 = time.perf_counter()
-    eg = EdgeGuard(use_llm=a.llm)
+    eg = Bastion(use_llm=a.llm)
     load_ms = (time.perf_counter() - t0) * 1000
     rss_loaded = proc.memory_info().rss
 

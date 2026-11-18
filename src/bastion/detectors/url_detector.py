@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from edgeguard.features import url_features as uf
-from edgeguard.fusion import risk as fusion
-from edgeguard.schema import Evidence
+from bastion.features import url_features as uf
+from bastion.fusion import risk as fusion
+from bastion.schema import Evidence
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[3] / "models" / "url_model.joblib"
 

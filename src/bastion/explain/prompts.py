@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 
-from edgeguard.schema import Evidence
+from bastion.schema import Evidence
 
 SYSTEM = (
     "You are a cybersecurity assistant on a phone. A detector has ALREADY decided "

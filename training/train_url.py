@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "training"))
 
-from edgeguard.features import url_features as uf  # noqa: E402
+from bastion.features import url_features as uf  # noqa: E402
 from metrics import (detection_metrics, model_size_bytes,  # noqa: E402
                      single_sample_latency, threshold_for_recall)
 

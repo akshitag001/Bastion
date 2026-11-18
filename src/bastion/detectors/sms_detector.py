@@ -6,10 +6,10 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from edgeguard.detectors.url_detector import UrlDetector
-from edgeguard.features import sms_features as sf
-from edgeguard.fusion import risk as fusion
-from edgeguard.schema import Evidence
+from bastion.detectors.url_detector import UrlDetector
+from bastion.features import sms_features as sf
+from bastion.fusion import risk as fusion
+from bastion.schema import Evidence
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[3] / "models" / "sms_model.joblib"
 

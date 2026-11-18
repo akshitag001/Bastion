@@ -3,7 +3,7 @@ grounding list for the LLM, so advice is always safe even if the LLM fails."""
 
 from __future__ import annotations
 
-from edgeguard.schema import Evidence
+from bastion.schema import Evidence
 
 _URL = {
     "MALICIOUS": [

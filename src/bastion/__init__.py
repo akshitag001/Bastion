@@ -1,4 +1,4 @@
-"""EdgeGuard: offline, on-device phishing / scam detection for Arm edge devices.
+"""Bastion: offline, on-device phishing / scam detection for Arm edge devices.
 
 Design rule: detectors decide the verdict; the Llama explainer only explains.
 """

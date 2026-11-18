@@ -19,8 +19,8 @@ def test_train_url_and_sms_smoke(tmp_path):
     _run(ROOT / "training" / "train_sms.py", "--uci", tmp_path / "synthetic_sms.tsv",
          "--out", tmp_path / "sms.joblib", "--results-dir", tmp_path / "res")
 
-    from edgeguard.pipeline import EdgeGuard
-    eg = EdgeGuard(use_llm=False, url_model=tmp_path / "url.joblib", sms_model=tmp_path / "sms.joblib")
+    from bastion.pipeline import Bastion
+    eg = Bastion(use_llm=False, url_model=tmp_path / "url.joblib", sms_model=tmp_path / "sms.joblib")
     r = eg.scan_sms("URGENT verify KYC at http://sbi-kyc.xyz/login")
     assert r.evidence.ml_score is not None and r.evidence.sub_evidence[0].ml_score is not None
     assert len(list((tmp_path / "res").glob("*.json"))) == 2

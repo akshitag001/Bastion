@@ -1,4 +1,8 @@
-# EdgeGuard: On-Device Phishing & Scam Detection (Bharat AI-SoC 2026-27, PS3)
+# Bastion (PS3 edge AI scam guard)
+
+*Bastion: the offline AI guard on your edge device.*
+
+On-device phishing & scam detection for the Bharat AI-SoC Challenge 2026-27 (Arm), PS3. (Not related to the Microsoft product "Azure Bastion".)
 
 Offline AI security assistant for Arm edge devices (target: **Raspberry Pi 5, CPU-only**).
 It scans **URLs** and **SMS messages**, gives a verdict + risk score, explains *why* in plain
@@ -7,13 +11,13 @@ No cloud. No network calls at inference time.
 
 ```
 Input (URL / SMS)
-  -> features (lexical URL features, SMS social-engineering indicators)    src/edgeguard/features/
-  -> detectors (rules + ML model)                                          src/edgeguard/detectors/
-  -> risk fusion (0-100 score, SAFE / SUSPICIOUS / MALICIOUS)              src/edgeguard/fusion/
-  -> Llama 3.2 1B on ExecuTorch writes a short explanation                 src/edgeguard/explain/
+  -> features (lexical URL features, SMS social-engineering indicators)    src/bastion/features/
+  -> detectors (rules + ML model)                                          src/bastion/detectors/
+  -> risk fusion (0-100 score, SAFE / SUSPICIOUS / MALICIOUS)              src/bastion/fusion/
+  -> Llama 3.2 1B on ExecuTorch writes a short explanation                 src/bastion/explain/
        -> guard: rejects output that contradicts the verdict / invents links
        -> fallback template if Llama is missing, crashes or is rejected
-  -> remediation advice (deterministic, always shown)                      src/edgeguard/advice/
+  -> remediation advice (deterministic, always shown)                      src/bastion/advice/
 ```
 
 **Design rule:** the detector decides; Llama only explains. The verdict can never be changed by the LLM
@@ -24,11 +28,11 @@ Input (URL / SMS)
 ```bash
 bash scripts/setup.sh
 source .venv/bin/activate
-edgeguard status            # what is loaded: rules / ML models / Llama runtime
-edgeguard demo              # runs handwritten demo URLs + SMS
-edgeguard scan-url "http://paypal.com.account-verify-secure.xyz/signin"
-edgeguard scan-sms "Your SBI account will be blocked today. Update KYC at http://sbi-kyc.xyz"
-edgeguard --json scan-sms "..."   # machine-readable
+bastion status            # what is loaded: rules / ML models / Llama runtime
+bastion demo              # runs handwritten demo URLs + SMS
+bastion scan-url "http://paypal.com.account-verify-secure.xyz/signin"
+bastion scan-sms "Your SBI account will be blocked today. Update KYC at http://sbi-kyc.xyz"
+bastion --json scan-sms "..."   # machine-readable
 pytest -q                   # 26 tests
 ```
 
@@ -50,10 +54,10 @@ The URL trainer splits **by domain** and runs a **leak probe** (see docs/DATASET
 1. Accept the Llama 3.2 licence and download `Llama-3.2-1B-Instruct` (original Meta checkpoint).
 2. `bash scripts/export_llama.sh` on your dev machine -> `models/llama/llama3_2_1b_8da4w.pte` + `tokenizer.model`.
 3. `bash scripts/build_runner_pi.sh` on the Pi -> `models/llama/llama_main`.
-4. Copy the `.pte` and tokenizer to the Pi's `models/llama/`, then `edgeguard status` should say **READY**.
+4. Copy the `.pte` and tokenizer to the Pi's `models/llama/`, then `bastion status` should say **READY**.
 
-Paths can be overridden with `EDGEGUARD_LLAMA_RUNNER`, `EDGEGUARD_LLAMA_PTE`, `EDGEGUARD_LLAMA_TOKENIZER`,
-`EDGEGUARD_LLAMA_THREADS`. **Both scripts are untested templates. Verify them against the current ExecuTorch docs**
+Paths can be overridden with `BASTION_LLAMA_RUNNER`, `BASTION_LLAMA_PTE`, `BASTION_LLAMA_TOKENIZER`,
+`BASTION_LLAMA_THREADS`. **Both scripts are untested templates. Verify them against the current ExecuTorch docs**
 (see docs/EXECUTORCH_NOTES.md).
 
 ## Benchmark on the device

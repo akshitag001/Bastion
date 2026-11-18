@@ -7,7 +7,7 @@
 - Export: `examples.models.llama.export_llama`, XNNPACK delegate, KV cache, SDPA, quant `8da4w` (int8 dynamic
   activations, int4 grouped weights, group size 128), max seq length 512.
 - Runtime on Pi 5: C++ `llama_main` runner built natively for aarch64; app calls it via subprocess
-  (`src/edgeguard/explain/llama_executorch.py`).
+  (`src/bastion/explain/llama_executorch.py`).
 
 ## Things to verify (and write the answers here)
 - [ ] ExecuTorch version/tag used: ...

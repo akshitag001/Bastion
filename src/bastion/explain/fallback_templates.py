@@ -3,7 +3,7 @@ fails validation. Guarantees the user always gets a correct, safe message."""
 
 from __future__ import annotations
 
-from edgeguard.schema import Evidence
+from bastion.schema import Evidence
 
 _OPENERS = {
     ("url", "MALICIOUS"): "This link looks like a phishing or malicious website.",

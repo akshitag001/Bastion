@@ -61,4 +61,4 @@ def main(out_dir: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "/tmp/edgeguard_synth")
+    main(sys.argv[1] if len(sys.argv) > 1 else "/tmp/bastion_synth")
