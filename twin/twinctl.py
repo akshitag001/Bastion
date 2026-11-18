@@ -7,6 +7,7 @@
   python twin/twinctl.py test            pytest inside the twin
   python twin/twinctl.py bench           edge benchmark inside the twin (JSON -> benchmarks/results/)
   python twin/twinctl.py offline-demo    full demo with --network none, log -> benchmarks/results/offline_proof_<date>.log
+  python twin/twinctl.py serve [--port N] web app from the twin at http://127.0.0.1:N (for the offline version use docker compose)
   python twin/twinctl.py run -- <cmd>    any command inside the twin
   python twin/twinctl.py export          x86 container: download Llama 3.2 1B + export .pte (needs HF_TOKEN env)
 
@@ -39,7 +40,7 @@ def sh(cmd: list[str], check: bool = True, capture: bool = False) -> subprocess.
     return subprocess.run(cmd, check=check, text=True, capture_output=capture)
 
 
-def docker_run_args(ram_gb: int, offline: bool, interactive: bool = False) -> list[str]:
+def docker_run_args(ram_gb: int, offline: bool, interactive: bool = False, port: int | None = None) -> list[str]:
     args = ["docker", "run", "--rm", "--platform", "linux/arm64",
             f"--cpus={PROFILE['cpus']}", f"--memory={ram_gb}g",
             "-e", f"BASTION_HOST_ARCH={host_arch()}",
@@ -49,6 +50,8 @@ def docker_run_args(ram_gb: int, offline: bool, interactive: bool = False) -> li
             "-e", f"OMP_NUM_THREADS={PROFILE['threads']}", "-e", f"OPENBLAS_NUM_THREADS={PROFILE['threads']}",
             "-v", f"{ROOT / 'models'}:/app/models:ro",
             "-v", f"{ROOT / 'benchmarks' / 'results'}:/app/benchmarks/results"]
+    if port:
+        args += ["-p", f"127.0.0.1:{port}:8080"]      # host loopback only
     if offline:
         args += ["--network", "none"]
     if interactive:
@@ -139,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("up"); sub.add_parser("shell"); sub.add_parser("test"); sub.add_parser("bench")
     sub.add_parser("offline-demo")
     sub.add_parser("export")
+    p = sub.add_parser("serve"); p.add_argument("--port", type=int, default=8080)
     p = sub.add_parser("run"); p.add_argument("inner", nargs=argparse.REMAINDER)
     a = ap.parse_args(argv)
 
@@ -158,6 +162,11 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_export(a)
     if a.cmd == "offline-demo":
         return cmd_offline_demo(a)
+    if a.cmd == "serve":
+        (ROOT / "benchmarks" / "results").mkdir(parents=True, exist_ok=True)
+        print(f"Twin web app -> http://127.0.0.1:{a.port}  (Ctrl+C to stop)")
+        return sh(docker_run_args(a.ram, False, interactive=True, port=a.port)
+                  + ["bastion", "serve", "--host", "0.0.0.0", "--port", "8080"], check=False).returncode
     if a.cmd == "run":
         inner = a.inner[1:] if a.inner[:1] == ["--"] else a.inner
         return _run(a, inner or ["bastion", "status"])

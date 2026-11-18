@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -33,8 +34,8 @@ from sklearn.calibration import CalibratedClassifierCV
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "training"))
-from metrics import (detection_metrics, model_size_bytes,  # noqa: E402
-                     single_sample_latency, threshold_for_recall)
+from metrics import (calibrate_and_threshold, detection_metrics, end_to_end,  # noqa: E402
+                     model_size_bytes, single_sample_latency, threshold_for_recall)
 
 SEED = 42
 
@@ -98,10 +99,12 @@ def main() -> None:
         t0 = time.time()
         model.fit(X_tr2, y_tr2)
         train_s = time.time() - t0
-        thr = threshold_for_recall(y_va, model.predict_proba(X_va)[:, 1], a.target_recall)
+        p_va = model.predict_proba(X_va)[:, 1]
+        thr = threshold_for_recall(y_va, p_va, a.target_recall)
         proba = model.predict_proba(X_te)[:, 1]
         results[name] = {
             "train_seconds": round(train_s, 2),
+            "val_roc_auc": detection_metrics(y_va, p_va)["roc_auc"],
             "test_at_0.5": detection_metrics(y_te, proba, 0.5),
             "test_at_recall_threshold": detection_metrics(y_te, proba, thr),
             "size_bytes": model_size_bytes(model),
@@ -112,19 +115,44 @@ def main() -> None:
         print(f"{name:20s} F1={m['f1']:.4f} recall={m['recall']:.4f} FPR={m['fpr']:.4f} AUC={m['roc_auc']} "
               f"size={results[name]['size_bytes'] / 1024:.0f}KB p50={results[name]['latency_single']['p50_ms']}ms")
 
-    best = max(results, key=lambda k: (results[k]["test_at_0.5"]["f1"], -results[k]["size_bytes"]))
-    print(f"selected: {best}")
-    # Refit the selected model on train+val (same hyper-params) before saving.
-    final = fitted[best].fit(X_tr, y_tr)
+    # Model selection on VALIDATION ROC-AUC only; ties -> smaller model.
+    best = max(results, key=lambda k: (results[k]["val_roc_auc"], -results[k]["size_bytes"]))
+    print(f"selected (by validation ROC-AUC): {best}")
+    # No refit on train+val: the operating threshold below is chosen for THIS fitted model.
+    # Validation is small (~75 scams), so sigmoid (2 parameters) rather than isotonic calibration.
+    va_a, va_b = train_test_split(list(range(len(X_va))), test_size=0.5, stratify=y_va, random_state=SEED)
+    cal, op_thr = calibrate_and_threshold(fitted[best], [X_va[i] for i in va_a], y_va[va_a],
+                                          [X_va[i] for i in va_b], y_va[va_b], a.target_recall, method="sigmoid")
+    p_te_cal = cal.predict_proba(X_te)[:, 1]
+    calibrated = {"method": "sigmoid", "calibration_rows": len(va_a), "threshold_rows": len(va_b),
+                  "threshold_positives": int(y_va[va_b].sum()), "operating_threshold": round(op_thr, 6),
+                  "test_at_operating_threshold": detection_metrics(y_te, p_te_cal, op_thr),
+                  "brier_test_uncalibrated": round(float(np.mean((fitted[best].predict_proba(X_te)[:, 1] - y_te) ** 2)), 5),
+                  "brier_test_calibrated": round(float(np.mean((p_te_cal - y_te) ** 2)), 5)}
+    m = calibrated["test_at_operating_threshold"]
+    print(f"calibrated {best}: threshold={op_thr:.4f} -> test recall={m['recall']} precision={m['precision']} "
+          f"FPR={m['fpr']}  Brier {calibrated['brier_test_uncalibrated']} -> {calibrated['brier_test_calibrated']}")
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": final, "name": f"sms-{best}", "trained_on": Path(a.uci or a.csv).name}, a.out, compress=3)
+    joblib.dump({"model": cal, "name": f"sms-{best}-cal", "threshold": float(op_thr), "calibrated": True,
+                 "target_recall": a.target_recall, "trained_on": Path(a.uci or a.csv).name}, a.out, compress=3)
+
+    # End-to-end: the real SmsDetector (indicator rules + calibrated ML + embedded-URL detector + fusion).
+    from bastion.detectors.sms_detector import SmsDetector
+    det = SmsDetector(model_path=a.out)
+    e2e = end_to_end(det.analyze, X_te, y_te)
+    w = e2e["warned_suspicious_or_malicious"]
+    print(f"END-TO-END detector on test (warned = SUSPICIOUS|MALICIOUS): recall={w['recall']} precision={w['precision']} "
+          f"FPR={w['fpr']} F1={w['f1']} AUC(risk)={w['roc_auc']}  verdicts={e2e['verdict_counts']}  "
+          f"p50={e2e['latency_ms']['p50']}ms")
 
     report = {
         "task": "sms", "dataset": Path(a.uci or a.csv).name, "seed": SEED,
         "rows_after_dedup": len(df), "scam": int(df.label.sum()),
         "split": {"train": len(X_tr2), "val": len(X_va), "test": len(X_te), "stratified": True},
-        "note": "test metrics are from models fit on train only (before the train+val refit)",
+        "note": "all models fit on the train split only; validation used for selection, calibration, threshold",
         "target_recall": a.target_recall, "models": results, "selected": best,
+        "selection": "validation ROC-AUC", "calibration": calibrated, "end_to_end_test": e2e,
+        "end_to_end_url_model": det.url.model_name,
         "machine": {"platform": platform.platform(), "machine": platform.machine(),
                     "python": platform.python_version()},
     }

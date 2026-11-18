@@ -38,9 +38,28 @@ def label_for(risk: int, t: Thresholds = DEFAULT) -> str:
     return "SAFE"
 
 
-def confidence_for(score: float, t: Thresholds = DEFAULT) -> float:
-    """Crude confidence: how far the score is from the nearest decision boundary,
-    scaled to 0.5-1.0. Replace with calibrated probabilities later (M4)."""
+def align_ml(p: float, threshold: float | None) -> float:
+    """Map a calibrated ML probability so that the model's recall-targeted operating threshold
+    (chosen on the validation split, stored in the model bundle) lands exactly on 0.5.
+
+    With the default weights, ML alone at 0.5 gives fused = 0.7 * 0.5 = 0.35 = the SUSPICIOUS boundary,
+    so every input the ML model flags at its operating point is at least SUSPICIOUS. Rules can only add,
+    which is why the end-to-end recall is never below the validated ML recall.
+    """
+    if threshold is None or not 0.0 < threshold < 1.0:
+        return p
+    if p < threshold:
+        return 0.5 * p / threshold
+    return 0.5 + 0.5 * (p - threshold) / (1.0 - threshold)
+
+
+def confidence_for(score: float, t: Thresholds = DEFAULT, ml_prob: float | None = None,
+                   label: str | None = None) -> float:
+    """With a calibrated ML model: the calibrated probability that the verdict is right
+    (P(scam) for SUSPICIOUS/MALICIOUS, 1 - P(scam) for SAFE). A low value means the ML model disagrees
+    with a rule-driven verdict, which is useful to show. Rules-only: distance from the nearest boundary."""
+    if ml_prob is not None and label is not None:
+        return round(ml_prob if label != "SAFE" else 1.0 - ml_prob, 2)
     boundaries = [t.suspicious / 100, t.malicious / 100]
     dist = min(abs(score - b) for b in boundaries)
     return round(min(1.0, 0.5 + dist * 1.5), 2)

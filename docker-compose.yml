@@ -1,0 +1,42 @@
+# Bastion Pi 5 twin, OFFLINE, with the web dashboard reachable from your browser.
+#
+#   docker compose up            -> http://127.0.0.1:8080
+#
+# Why two services: docker --network none disables port publishing. Instead, the bastion container sits on an
+# `internal: true` network (no gateway, no route to the internet: Bastion itself reports OFFLINE), and a tiny
+# nginx proxy, the only thing on both networks, publishes the UI on the host's loopback interface.
+name: bastion
+
+services:
+  bastion:
+    image: bastion-pi5-twin:dev          # python twin/twinctl.py build
+    platform: linux/arm64
+    command: ["bastion", "serve", "--host", "0.0.0.0", "--port", "8080"]
+    cpus: 4                              # Raspberry Pi 5: 4x Cortex-A76
+    mem_limit: 8g                        # use 4g for the 4 GB board
+    environment:
+      BASTION_HOST_ARCH: ${BASTION_HOST_ARCH:-x86_64}   # set to aarch64 on an Arm host
+      BASTION_TWIN_PROFILE: pi5-8gb
+      BASTION_LLAMA_THREADS: "4"
+      BASTION_LLAMA_TIMEOUT_S: "900"     # emulated Llama is slow; real Pi timings come from the real Pi
+      BASTION_HISTORY_DB: /data/history.db
+    volumes:
+      - ./models:/app/models:ro
+      - ./benchmarks/results:/app/benchmarks/results
+      - bastion-data:/data
+    networks: [offline]
+
+  ui-proxy:
+    image: nginx:1.27-alpine
+    depends_on: [bastion]
+    ports: ["127.0.0.1:8080:80"]
+    volumes:
+      - ./twin/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [offline, default]
+
+networks:
+  offline:
+    internal: true                       # no gateway -> bastion has no route to the internet
+
+volumes:
+  bastion-data:

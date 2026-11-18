@@ -36,8 +36,8 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "training"))
 
 from bastion.features import url_features as uf  # noqa: E402
-from metrics import (detection_metrics, model_size_bytes,  # noqa: E402
-                     single_sample_latency, threshold_for_recall)
+from metrics import (calibrate_and_threshold, detection_metrics, end_to_end,  # noqa: E402
+                     model_size_bytes, single_sample_latency, threshold_for_recall)
 
 SEED = 42
 
@@ -109,10 +109,12 @@ def main() -> None:
             # train in parallel, but predict single samples on 1 thread: on the device every scan is one URL,
             # and n_jobs=-1 would spin up a thread pool per prediction (very slow on 4-core Arm / under QEMU).
             model.set_params(n_jobs=1)
-        thr = threshold_for_recall(y[va_idx], model.predict_proba(X[va_idx])[:, 1], a.target_recall)
+        p_va = model.predict_proba(X[va_idx])[:, 1]
+        thr = threshold_for_recall(y[va_idx], p_va, a.target_recall)
         proba = model.predict_proba(X[te])[:, 1]
         results[name] = {
             "train_seconds": round(train_s, 2),
+            "val_roc_auc": detection_metrics(y[va_idx], p_va)["roc_auc"],
             "test_at_0.5": detection_metrics(y[te], proba, 0.5),
             f"test_at_recall_threshold": detection_metrics(y[te], proba, thr),
             "size_bytes": model_size_bytes(model),
@@ -137,13 +139,38 @@ def main() -> None:
     print(f"LEAK PROBE [full view, for reference]: F1={probe_full['f1']}  AUC={probe_full['roc_auc']}  "
           f"share with a path: benign={path_rate[0]} phishing={path_rate[1]}")
 
-    # pick best by F1 at 0.5; ties -> smaller model
-    best = max(results, key=lambda k: (results[k]["test_at_0.5"]["f1"], -results[k]["size_bytes"]))
-    print(f"selected: {best}")
+    # Model selection on VALIDATION ROC-AUC only (the test split is never used to choose); ties -> smaller model.
+    best = max(results, key=lambda k: (results[k]["val_roc_auc"], -results[k]["size_bytes"]))
+    print(f"selected (by validation ROC-AUC): {best}")
+
+    # Calibrate on one half of validation, choose the recall-targeted threshold on the other half.
+    gss_c = GroupShuffleSplit(n_splits=1, test_size=0.5, random_state=SEED)
+    va_a, va_b = (va_idx[i] for i in next(gss_c.split(X[va_idx], y[va_idx], groups=df["domain"].iloc[va_idx])))
+    cal, op_thr = calibrate_and_threshold(fitted[best], X[va_a], y[va_a], X[va_b], y[va_b], a.target_recall)
+    p_te_cal = cal.predict_proba(X[te])[:, 1]
+    calibrated = {"method": "isotonic", "calibration_rows": len(va_a), "threshold_rows": len(va_b),
+                  "operating_threshold": round(op_thr, 6),
+                  "test_at_operating_threshold": detection_metrics(y[te], p_te_cal, op_thr),
+                  "brier_test_uncalibrated": round(float(np.mean((fitted[best].predict_proba(X[te])[:, 1] - y[te]) ** 2)), 5),
+                  "brier_test_calibrated": round(float(np.mean((p_te_cal - y[te]) ** 2)), 5)}
+    m = calibrated["test_at_operating_threshold"]
+    print(f"calibrated {best}: threshold={op_thr:.4f} (val target recall {a.target_recall}) -> test recall={m['recall']} "
+          f"precision={m['precision']} FPR={m['fpr']}  Brier {calibrated['brier_test_uncalibrated']} -> "
+          f"{calibrated['brier_test_calibrated']}")
 
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": fitted[best], "name": f"url-{best}", "feature_names": uf.FEATURE_NAMES, "view": a.view,
+    joblib.dump({"model": cal, "name": f"url-{best}-cal", "feature_names": uf.FEATURE_NAMES, "view": a.view,
+                 "threshold": float(op_thr), "calibrated": True, "target_recall": a.target_recall,
                  "trained_on": Path(a.csv).name}, a.out, compress=3)
+
+    # End-to-end: the real UrlDetector (rules + calibrated ML + fusion) on the held-out test URLs.
+    from bastion.detectors.url_detector import UrlDetector
+    det = UrlDetector(model_path=a.out)
+    e2e = end_to_end(det.analyze, df["url"].iloc[te].tolist(), y[te])
+    w = e2e["warned_suspicious_or_malicious"]
+    print(f"END-TO-END detector on test (warned = SUSPICIOUS|MALICIOUS): recall={w['recall']} precision={w['precision']} "
+          f"FPR={w['fpr']} F1={w['f1']} AUC(risk)={w['roc_auc']}  verdicts={e2e['verdict_counts']}  "
+          f"p50={e2e['latency_ms']['p50']}ms")
 
     report = {
         "task": "url", "dataset": Path(a.csv).name, "seed": SEED,
@@ -151,6 +178,8 @@ def main() -> None:
         "split": {"train": len(tr_idx), "val": len(va_idx), "test": len(te), "grouped_by": "registered_domain",
                   "domain_overlap_train_test": len(overlap)},
         "target_recall": a.target_recall, "models": results, "selected": best,
+        "selection": "validation ROC-AUC", "calibration": calibrated, "end_to_end_test": e2e,
+        "fusion_thresholds": {"suspicious": 35, "malicious": 70, "ml_weight": 0.7},
         "view": a.view,
         "leak_probe_trivial_features": probe_m,
         "leak_probe_full_view_reference": probe_full,

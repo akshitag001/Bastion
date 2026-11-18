@@ -49,7 +49,14 @@ def model_size_bytes(obj) -> int:
 
 
 def single_sample_latency(predict_fn, samples, runs: int = 300, warmup: int = 20) -> dict:
-    """Latency of one-at-a-time inference (how the app actually calls it)."""
+    """Latency of one-at-a-time inference, measured the way the app runs it: OpenMP limited to 1 thread
+    (see bastion.detectors.url_detector._limit_openmp)."""
+    from threadpoolctl import threadpool_limits
+    with threadpool_limits(1, user_api="openmp"):
+        return _latency(predict_fn, samples, runs, warmup)
+
+
+def _latency(predict_fn, samples, runs, warmup) -> dict:
     for i in range(warmup):
         predict_fn([samples[i % len(samples)]])
     times = []
@@ -64,4 +71,50 @@ def single_sample_latency(predict_fn, samples, runs: int = 300, warmup: int = 20
         "p50_ms": round(times[len(times) // 2], 4),
         "p95_ms": round(times[int(len(times) * 0.95) - 1], 4),
         "p99_ms": round(times[int(len(times) * 0.99) - 1], 4),
+    }
+
+
+def calibrate_and_threshold(model, X_cal, y_cal, X_thr, y_thr, target_recall: float, method: str = "isotonic"):
+    """Calibrate a fitted model on one validation half and choose the recall-targeted operating threshold
+    on the OTHER half (so the threshold is not fit on the calibration data). Returns (calibrated_model, threshold)."""
+    from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.frozen import FrozenEstimator
+    from sklearn.model_selection import train_test_split
+    if len(set(np.asarray(y_cal).tolist())) < 2 or len(set(np.asarray(y_thr).tolist())) < 2:
+        # tiny / grouped splits can leave one class in a half (seen only on synthetic smoke data): re-split stratified
+        X_all = (list(X_cal) + list(X_thr)) if isinstance(X_cal, list) else np.concatenate([X_cal, X_thr])
+        y_all = np.concatenate([y_cal, y_thr])
+        if len(set(y_all.tolist())) < 2 or min(np.bincount(y_all.astype(int))) < 4:
+            print("WARNING: validation split has too few examples of one class; calibration SKIPPED")
+            return model, 0.5
+        X_cal, X_thr, y_cal, y_thr = train_test_split(X_all, y_all, test_size=0.5, stratify=y_all, random_state=42)
+    cal = CalibratedClassifierCV(FrozenEstimator(model), method=method).fit(X_cal, y_cal)
+    thr = threshold_for_recall(y_thr, cal.predict_proba(X_thr)[:, 1], target_recall)
+    return cal, thr
+
+
+def end_to_end(analyze_fn, inputs, y_true) -> dict:
+    """Evaluate the REAL detector (rules + ML + fusion) as the app runs it, one input at a time.
+    Positive prediction = verdict SUSPICIOUS or MALICIOUS (the user is warned); also reported for MALICIOUS only."""
+    from threadpoolctl import threadpool_limits
+    y_true = np.asarray(y_true).astype(int)
+    labels, risks, times = [], [], []
+    with threadpool_limits(1, user_api="openmp"):
+        for x in inputs:
+            t0 = time.perf_counter()
+            ev = analyze_fn(x)
+            times.append((time.perf_counter() - t0) * 1000)
+            labels.append(ev.label)
+            risks.append(ev.risk / 100)
+    warn = np.array([lbl != "SAFE" for lbl in labels], dtype=float)
+    mal = np.array([lbl == "MALICIOUS" for lbl in labels], dtype=float)
+    out_warn = detection_metrics(y_true, warn, 0.5)
+    out_warn["roc_auc"] = round(roc_auc_score(y_true, risks), 4) if len(set(y_true)) > 1 else None
+    times.sort()
+    return {
+        "warned_suspicious_or_malicious": out_warn,
+        "malicious_only": detection_metrics(y_true, mal, 0.5),
+        "verdict_counts": {k: labels.count(k) for k in ("SAFE", "SUSPICIOUS", "MALICIOUS")},
+        "latency_ms": {"p50": round(times[len(times) // 2], 4), "p95": round(times[int(len(times) * 0.95) - 1], 4),
+                       "mean": round(statistics.mean(times), 4)},
     }

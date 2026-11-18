@@ -30,11 +30,13 @@ class SmsDetector:
         self.url = url_detector or UrlDetector(thresholds=thresholds)
         self.model = None
         self.model_name = "rules-only"
+        self.threshold = None
         if model_path and Path(model_path).exists():
             import joblib
             bundle = joblib.load(model_path)  # trusted: produced by training/train_sms.py
             self.model = bundle["model"]
             self.model_name = bundle.get("name", "ml")
+            self.threshold = bundle.get("threshold")
 
     def rule_score(self, hits: dict) -> float:
         score = sum(WEIGHTS.get(k, 0.0) for k in hits)
@@ -56,7 +58,7 @@ class SmsDetector:
             ml = float(self.model.predict_proba([msg])[0][1])
 
         sub = [self.url.analyze(u) for u in hits.get("contains_url", [])[:5]]
-        fused = fusion.combine(rule, ml, self.t)
+        fused = fusion.combine(rule, None if ml is None else fusion.align_ml(ml, self.threshold), self.t)
         if sub:  # a malicious link makes the whole message at least that risky
             fused = max(fused, max(e.risk for e in sub) / 100 * 0.95)
 
@@ -73,12 +75,12 @@ class SmsDetector:
         for e in sub:
             if e.label != "SAFE":
                 reasons.append(f"Embedded link rated {e.label} (risk {e.risk})")
-        if ml is not None and ml >= 0.5:
+        if ml is not None and ml >= (self.threshold or 0.5):
             reasons.append(f"ML text model scores this as scam-like ({ml:.2f})")
 
         return Evidence(
-            channel="sms", input=msg[:300], label=fusion.label_for(risk, self.t), risk=risk,
-            confidence=fusion.confidence_for(fused, self.t), indicators=reasons,
+            channel="sms", input=msg[:300], label=(label := fusion.label_for(risk, self.t)), risk=risk,
+            confidence=fusion.confidence_for(fused, self.t, ml, label), indicators=reasons,
             rule_score=round(rule, 3), ml_score=None if ml is None else round(ml, 3),
             model=self.model_name if self.model is not None else "rules-only",
             sub_evidence=sub, latency_ms=round((time.perf_counter() - t0) * 1000, 3),
