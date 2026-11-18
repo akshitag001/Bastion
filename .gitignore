@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+data/raw/
+third_party/
+models/llama/
+*.pte
+*.pth
+# trained detector models are small; commit them once trained on REAL data if you want
+# models/*.joblib
+ps3-edge-guard-v0.1/

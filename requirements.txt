@@ -1,0 +1,8 @@
+# App + training. Pin exact versions after your first working install on the Pi:
+#   pip freeze > requirements.lock
+numpy>=1.24
+scikit-learn>=1.3
+joblib>=1.3
+pandas>=2.0
+psutil>=5.9
+pytest>=7

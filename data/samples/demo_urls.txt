@@ -1,0 +1,10 @@
+# HANDWRITTEN demo URLs for the live walkthrough. NOT benchmark data.
+# None of these were checked against live sites; do not visit them.
+https://www.google.com/search?q=weather
+https://www.onlinesbi.sbi/
+http://192.168.10.45/sbi-kyc/update/login.php
+http://paypal.com.account-verify-secure.xyz/signin?session=8f7a9
+https://bit.ly/3kYc-free-reward
+http://xn--pple-43d.com/icloud/unlock
+https://github.com/pytorch/executorch
+http://hdfc-netbanking-kyc-update.top/verify/otp
