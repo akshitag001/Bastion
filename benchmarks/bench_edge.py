@@ -22,6 +22,7 @@ import psutil
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from bastion import env  # noqa: E402
 from bastion.pipeline import Bastion  # noqa: E402
 
 
@@ -61,7 +62,10 @@ def main():
     rss_loaded = proc.memory_info().rss
 
     urls, sms = read_samples("demo_urls.txt"), read_samples("demo_sms.txt")
-    out = {"machine": {"platform": platform.platform(), "arch": platform.machine(),
+    envinfo = env.detect()
+    out = {"environment": envinfo["environment"],
+           "environment_detail": envinfo,
+           "machine": {"platform": platform.platform(), "arch": platform.machine(),
                        "cpu_count": psutil.cpu_count(), "ram_total_mb": round(psutil.virtual_memory().total / 2**20),
                        "python": platform.python_version(), "cpu_temp_c_start": cpu_temp()},
            "models": {"url": eg.url.model_name if eg.url.model else "rules-only",
@@ -104,8 +108,9 @@ def main():
     out["machine"]["cpu_temp_c_end"] = cpu_temp()
     res = ROOT / "benchmarks" / "results"
     res.mkdir(parents=True, exist_ok=True)
-    path = res / f"edge_{platform.machine()}_{time.strftime('%Y%m%d_%H%M%S')}.json"
+    path = res / f"edge_{envinfo['environment']}_{time.strftime('%Y%m%d_%H%M%S')}.json"
     path.write_text(json.dumps(out, indent=2))
+    print(f"environment: {envinfo['environment']} - {envinfo['timing_note']}")
     print(f"saved -> {path}")
 
 

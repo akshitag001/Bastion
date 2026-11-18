@@ -21,9 +21,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM base AS deps
 ARG EXECUTORCH_VERSION=1.6.0
 ARG TORCH_VERSION=2.15.0
-# PyPI's aarch64 torch wheel is CPU-only, which is what the Pi uses.
+# CPU-only torch from the PyTorch CPU index: PyPI's aarch64 torch 2.15 wheel pulls CUDA libraries
+# (nvidia-cublas etc., >1 GB) that a Raspberry Pi can never use. Installed first so executorch's
+# torch==2.15.0 requirement is already satisfied by the +cpu build.
+# Pinning the local version "+cpu" makes it impossible for pip to pick the CUDA build from PyPI;
+# PyPI stays as an extra index for torch's ordinary dependencies.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "torch==${TORCH_VERSION}" "executorch==${EXECUTORCH_VERSION}"
+    pip install --upgrade pip \
+ && pip install "torch==${TORCH_VERSION}+cpu" --index-url https://download.pytorch.org/whl/cpu \
+        --extra-index-url https://pypi.org/simple \
+ && pip install "executorch==${EXECUTORCH_VERSION}" \
+ && python -c "import torch; assert '+cpu' in torch.__version__, torch.__version__; print('torch', torch.__version__)"
 COPY requirements.txt /tmp/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r /tmp/requirements.txt
 

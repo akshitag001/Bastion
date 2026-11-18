@@ -39,6 +39,7 @@ class UrlDetector:
         self.t = thresholds
         self.model = None
         self.model_name = "rules-only"
+        self.view = uf.VIEWS["full"]
         if model_path and Path(model_path).exists():
             import joblib  # only needed when a trained model exists
             bundle = joblib.load(model_path)  # trusted: produced by training/train_url.py
@@ -46,6 +47,7 @@ class UrlDetector:
                 raise ValueError("URL model was trained with a different feature set; retrain it.")
             self.model = bundle["model"]
             self.model_name = bundle.get("name", "ml")
+            self.view = uf.VIEWS[bundle.get("view", "full")]  # same URL view as in training
 
     def rule_score(self, feats: dict[str, float]) -> tuple[float, list[str]]:
         score, reasons = 0.0, []
@@ -61,7 +63,8 @@ class UrlDetector:
         rule, reasons = self.rule_score(feats)
         ml = None
         if self.model is not None:
-            ml = float(self.model.predict_proba([[feats[k] for k in uf.FEATURE_NAMES]])[0][1])
+            mfeats = feats if self.view is uf.VIEWS["full"] else uf.extract(self.view(url))
+            ml = float(self.model.predict_proba([[mfeats[k] for k in uf.FEATURE_NAMES]])[0][1])
         fused = fusion.combine(rule, ml, self.t)
         risk = int(round(fused * 100))
         label = fusion.label_for(risk, self.t)

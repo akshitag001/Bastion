@@ -50,8 +50,9 @@ def load(csv: str, url_col: str, label_col: str, phish_value: str, max_rows: int
     df = df[df["url"].str.len() > 0].drop_duplicates("url")
     print(f"loaded {before} rows -> {len(df)} after dropping empty/duplicate URLs")
     if max_rows and len(df) > max_rows:
-        df = df.groupby("label", group_keys=False).apply(
-            lambda g: g.sample(min(len(g), max_rows // 2), random_state=SEED))
+        # (groupby.apply drops the grouping column in pandas >= 2.2, so sample per group explicitly)
+        df = pd.concat([g.sample(min(len(g), max_rows // 2), random_state=SEED)
+                        for _, g in df.groupby("label")])
         print(f"subsampled to {len(df)} rows (balanced cap) for speed")
     df["domain"] = df["url"].map(lambda u: uf.parse(u)["registered_domain"] or u)
     return df.reset_index(drop=True)
@@ -63,6 +64,8 @@ def main() -> None:
     ap.add_argument("--url-col", default="url")
     ap.add_argument("--label-col", default="label")
     ap.add_argument("--phish-value", default="1", help="label value meaning PHISHING")
+    ap.add_argument("--view", choices=sorted(uf.VIEWS), default="host",
+                    help="URL view the ML model sees. host = scheme://host/ (default; avoids the PhiUSIIL bare-homepage leak)")
     ap.add_argument("--max-rows", type=int, default=200_000)
     ap.add_argument("--test-size", type=float, default=0.2)
     ap.add_argument("--target-recall", type=float, default=0.95)
@@ -74,7 +77,9 @@ def main() -> None:
     print(f"class balance: phishing={df.label.sum()}  benign={(1 - df.label).sum()}")
 
     t0 = time.time()
-    X = np.array([uf.vector(u) for u in df["url"]], dtype=np.float32)
+    view = uf.VIEWS[a.view]
+    X = np.array([uf.vector(view(u)) for u in df["url"]], dtype=np.float32)
+    X_full = X if a.view == "full" else np.array([uf.vector(u) for u in df["url"]], dtype=np.float32)
     print(f"feature extraction: {len(df)} URLs in {time.time() - t0:.1f}s")
     y = df["label"].to_numpy()
 
@@ -119,15 +124,21 @@ def main() -> None:
     trivial_cols = [uf.FEATURE_NAMES.index(c) for c in ("url_len", "path_len", "n_dots_host")]
     probe = HistGradientBoostingClassifier(max_iter=100, random_state=SEED).fit(X[tr_idx][:, trivial_cols], y[tr_idx])
     probe_m = detection_metrics(y[te], probe.predict_proba(X[te][:, trivial_cols])[:, 1])
-    print(f"LEAK PROBE (3 trivial features only): F1={probe_m['f1']}  AUC={probe_m['roc_auc']}"
+    print(f"LEAK PROBE [{a.view} view] (3 trivial features only): F1={probe_m['f1']}  AUC={probe_m['roc_auc']}"
           + ("   <-- WARNING: dataset likely has collection artefacts" if (probe_m["roc_auc"] or 0) > 0.95 else ""))
+    probe_f = HistGradientBoostingClassifier(max_iter=100, random_state=SEED).fit(X_full[tr_idx][:, trivial_cols], y[tr_idx])
+    probe_full = detection_metrics(y[te], probe_f.predict_proba(X_full[te][:, trivial_cols])[:, 1])
+    path_rate = {lbl: round(float((df[df.label == lbl]["url"].map(lambda u: uf.extract(u)["path_len"]) > 1).mean()), 4)
+                 for lbl in (0, 1)}
+    print(f"LEAK PROBE [full view, for reference]: F1={probe_full['f1']}  AUC={probe_full['roc_auc']}  "
+          f"share with a path: benign={path_rate[0]} phishing={path_rate[1]}")
 
     # pick best by F1 at 0.5; ties -> smaller model
     best = max(results, key=lambda k: (results[k]["test_at_0.5"]["f1"], -results[k]["size_bytes"]))
     print(f"selected: {best}")
 
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": fitted[best], "name": f"url-{best}", "feature_names": uf.FEATURE_NAMES,
+    joblib.dump({"model": fitted[best], "name": f"url-{best}", "feature_names": uf.FEATURE_NAMES, "view": a.view,
                  "trained_on": Path(a.csv).name}, a.out, compress=3)
 
     report = {
@@ -136,7 +147,10 @@ def main() -> None:
         "split": {"train": len(tr_idx), "val": len(va_idx), "test": len(te), "grouped_by": "registered_domain",
                   "domain_overlap_train_test": len(overlap)},
         "target_recall": a.target_recall, "models": results, "selected": best,
+        "view": a.view,
         "leak_probe_trivial_features": probe_m,
+        "leak_probe_full_view_reference": probe_full,
+        "share_of_urls_with_path": {"benign": path_rate[0], "phishing": path_rate[1]},
         "machine": {"platform": platform.platform(), "machine": platform.machine(),
                     "python": platform.python_version()},
     }

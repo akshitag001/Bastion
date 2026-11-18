@@ -1,0 +1,164 @@
+{
+  "task": "sms",
+  "dataset": "SMSSpamCollection",
+  "seed": 42,
+  "rows_after_dedup": 5137,
+  "scam": 620,
+  "split": {
+    "train": 3492,
+    "val": 617,
+    "test": 1028,
+    "stratified": true
+  },
+  "note": "test metrics are from models fit on train only (before the train+val refit)",
+  "target_recall": 0.95,
+  "models": {
+    "tfidf_logreg": {
+      "train_seconds": 0.57,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9864,
+        "precision": 0.9508,
+        "recall": 0.9355,
+        "f1": 0.9431,
+        "roc_auc": 0.9921,
+        "fpr": 0.0066,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 898,
+          "fp": 6,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.05459180503124669,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9251,
+        "precision": 0.6181,
+        "recall": 0.9919,
+        "f1": 0.7616,
+        "roc_auc": 0.9921,
+        "fpr": 0.0841,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 828,
+          "fp": 76,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 539347,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 2.4011,
+        "p50_ms": 2.289,
+        "p95_ms": 3.7396,
+        "p99_ms": 5.45
+      }
+    },
+    "tfidf_linearsvm": {
+      "train_seconds": 0.9,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9883,
+        "precision": 0.9667,
+        "recall": 0.9355,
+        "f1": 0.9508,
+        "roc_auc": 0.9923,
+        "fpr": 0.0044,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 900,
+          "fp": 4,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.025882063190481194,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9339,
+        "precision": 0.6474,
+        "recall": 0.9919,
+        "f1": 0.7834,
+        "roc_auc": 0.9923,
+        "fpr": 0.0741,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 837,
+          "fp": 67,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 854506,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 4.4754,
+        "p50_ms": 4.2072,
+        "p95_ms": 6.5212,
+        "p99_ms": 7.7769
+      }
+    },
+    "tfidf_complement_nb": {
+      "train_seconds": 0.51,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9835,
+        "precision": 0.935,
+        "recall": 0.9274,
+        "f1": 0.9312,
+        "roc_auc": 0.9846,
+        "fpr": 0.0088,
+        "fnr": 0.0726,
+        "confusion": {
+          "tn": 896,
+          "fp": 8,
+          "fn": 9,
+          "tp": 115
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.00048400807776435704,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.7724,
+        "precision": 0.3446,
+        "recall": 0.9839,
+        "f1": 0.5105,
+        "roc_auc": 0.9846,
+        "fpr": 0.2566,
+        "fnr": 0.0161,
+        "confusion": {
+          "tn": 672,
+          "fp": 232,
+          "fn": 2,
+          "tp": 122
+        }
+      },
+      "size_bytes": 1161580,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 2.9972,
+        "p50_ms": 2.9049,
+        "p95_ms": 3.7184,
+        "p99_ms": 4.6505
+      }
+    }
+  },
+  "selected": "tfidf_linearsvm",
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "machine": "AMD64",
+    "python": "3.11.9"
+  }
+}

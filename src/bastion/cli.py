@@ -44,6 +44,11 @@ def _print(report: Report, as_json: bool) -> None:
 
 
 def _status(eg: Bastion) -> None:
+    from bastion import env
+    d, n = env.detect(), env.network_status()
+    print(f"Environment  : {d['environment']}  ({d['reason']})")
+    print(f"  {d['timing_note']}")
+    print(f"Network      : {'OFFLINE (no route)' if n['offline'] else 'online'}")
     print(f"URL detector : {eg.url.model_name if eg.url.model else 'rules-only (train with training/train_url.py)'}")
     print(f"SMS detector : {eg.sms.model_name if eg.sms.model else 'rules-only (train with training/train_sms.py)'}")
     if eg.llm:

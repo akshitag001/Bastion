@@ -151,6 +151,16 @@ def extract(url: str) -> dict[str, float]:
     return {k: float(f[k]) for k in FEATURE_NAMES}
 
 
+def host_view(url: str) -> str:
+    """scheme://host[:port]/ only. Used by the ML model when the training data's benign URLs are all
+    bare homepages (PhiUSIIL): path features would otherwise leak the label. Path signals stay in the rules."""
+    u = urlsplit(_ensure_scheme(url))
+    return f"{u.scheme}://{u.netloc}/"
+
+
+VIEWS = {"full": lambda u: u, "host": host_view}
+
+
 def vector(url: str) -> list[float]:
     f = extract(url)
     return [f[k] for k in FEATURE_NAMES]

@@ -1,0 +1,205 @@
+{
+  "task": "url",
+  "dataset": "PhiUSIIL_Phishing_URL_Dataset.csv",
+  "seed": 42,
+  "rows": 200000,
+  "phishing": 100000,
+  "split": {
+    "train": 131516,
+    "val": 22627,
+    "test": 45857,
+    "grouped_by": "registered_domain",
+    "domain_overlap_train_test": 0
+  },
+  "target_recall": 0.95,
+  "models": {
+    "logreg": {
+      "train_seconds": 0.42,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9269,
+        "precision": 0.9737,
+        "recall": 0.8948,
+        "f1": 0.9326,
+        "roc_auc": 0.9634,
+        "fpr": 0.0314,
+        "fnr": 0.1052,
+        "confusion": {
+          "tn": 19299,
+          "fp": 626,
+          "fn": 2728,
+          "tp": 23204
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.15225036442279816,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9128,
+        "precision": 0.9034,
+        "recall": 0.947,
+        "f1": 0.9247,
+        "roc_auc": 0.9634,
+        "fpr": 0.1317,
+        "fnr": 0.053,
+        "confusion": {
+          "tn": 17300,
+          "fp": 2625,
+          "fn": 1374,
+          "tp": 24558
+        }
+      },
+      "size_bytes": 1440,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 0.4713,
+        "p50_ms": 0.4532,
+        "p95_ms": 0.5978,
+        "p99_ms": 0.7822
+      }
+    },
+    "random_forest": {
+      "train_seconds": 1.42,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9423,
+        "precision": 0.9895,
+        "recall": 0.9076,
+        "f1": 0.9468,
+        "roc_auc": 0.9896,
+        "fpr": 0.0125,
+        "fnr": 0.0924,
+        "confusion": {
+          "tn": 19676,
+          "fp": 249,
+          "fn": 2395,
+          "tp": 23537
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.22378491903963538,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9549,
+        "precision": 0.9636,
+        "recall": 0.9563,
+        "f1": 0.96,
+        "roc_auc": 0.9896,
+        "fpr": 0.047,
+        "fnr": 0.0437,
+        "confusion": {
+          "tn": 18989,
+          "fp": 936,
+          "fn": 1133,
+          "tp": 24799
+        }
+      },
+      "size_bytes": 4026449,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 32.2854,
+        "p50_ms": 33.8464,
+        "p95_ms": 42.453,
+        "p99_ms": 51.1217
+      }
+    },
+    "hist_gbdt": {
+      "train_seconds": 7.37,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9587,
+        "precision": 0.9897,
+        "recall": 0.9368,
+        "f1": 0.9625,
+        "roc_auc": 0.991,
+        "fpr": 0.0127,
+        "fnr": 0.0632,
+        "confusion": {
+          "tn": 19671,
+          "fp": 254,
+          "fn": 1638,
+          "tp": 24294
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.4215417484547891,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.9617,
+        "precision": 0.9863,
+        "recall": 0.9454,
+        "f1": 0.9654,
+        "roc_auc": 0.991,
+        "fpr": 0.0171,
+        "fnr": 0.0546,
+        "confusion": {
+          "tn": 19584,
+          "fp": 341,
+          "fn": 1416,
+          "tp": 24516
+        }
+      },
+      "size_bytes": 464830,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 22.477,
+        "p50_ms": 22.1037,
+        "p95_ms": 27.7281,
+        "p99_ms": 42.6858
+      }
+    }
+  },
+  "selected": "hist_gbdt",
+  "view": "host",
+  "leak_probe_trivial_features": {
+    "threshold": 0.5,
+    "n": 45857,
+    "positives": 25932,
+    "accuracy": 0.716,
+    "precision": 0.86,
+    "recall": 0.5945,
+    "f1": 0.703,
+    "roc_auc": 0.7816,
+    "fpr": 0.1259,
+    "fnr": 0.4055,
+    "confusion": {
+      "tn": 17416,
+      "fp": 2509,
+      "fn": 10516,
+      "tp": 15416
+    }
+  },
+  "leak_probe_full_view_reference": {
+    "threshold": 0.5,
+    "n": 45857,
+    "positives": 25932,
+    "accuracy": 0.8465,
+    "precision": 0.9828,
+    "recall": 0.7416,
+    "f1": 0.8453,
+    "roc_auc": 0.8993,
+    "fpr": 0.0169,
+    "fnr": 0.2584,
+    "confusion": {
+      "tn": 19589,
+      "fp": 336,
+      "fn": 6702,
+      "tp": 19230
+    }
+  },
+  "share_of_urls_with_path": {
+    "benign": 0.0,
+    "phishing": 0.2716
+  },
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "machine": "AMD64",
+    "python": "3.11.9"
+  }
+}

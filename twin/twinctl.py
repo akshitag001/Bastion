@@ -8,6 +8,7 @@
   python twin/twinctl.py bench           edge benchmark inside the twin (JSON -> benchmarks/results/)
   python twin/twinctl.py offline-demo    full demo with --network none, log -> benchmarks/results/offline_proof_<date>.log
   python twin/twinctl.py run -- <cmd>    any command inside the twin
+  python twin/twinctl.py export          x86 container: download Llama 3.2 1B + export .pte (needs HF_TOKEN env)
 
 Every run uses the Pi 5 profile: --platform linux/arm64 --cpus=4 --memory=8g (or 4g),
 and passes BASTION_HOST_ARCH so the environment tag can never claim native/Pi timing under emulation.
@@ -110,6 +111,22 @@ def cmd_offline_demo(a) -> int:
     return proc.returncode
 
 
+def cmd_export(a) -> int:
+    import os
+    img = "bastion-llama-export:dev"
+    rc = sh(["docker", "buildx", "build", "--platform", "linux/amd64", "-f", str(ROOT / "twin" / "export" / "Dockerfile"),
+             "-t", img, "--load", str(ROOT)], check=False).returncode
+    if rc:
+        return rc
+    if not os.environ.get("HF_TOKEN") and not (ROOT / "models" / "llama" / "hf" / "original" / "consolidated.00.pth").exists():
+        print("Set HF_TOKEN in your environment first (PowerShell: $env:HF_TOKEN = '<token>'). It is passed by name, never stored.")
+        return 2
+    (ROOT / "models" / "llama").mkdir(parents=True, exist_ok=True)
+    # "-e HF_TOKEN" (name only) forwards the value from this process's environment without printing it.
+    return sh(["docker", "run", "--rm", "--platform", "linux/amd64", "-e", "HF_TOKEN", "--memory=24g",
+               "-v", f"{ROOT}:/work", img], check=False).returncode
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="twinctl", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ram", type=int, choices=(4, 8), default=PROFILE["ram_gb"], help="Pi 5 RAM variant (GB)")
@@ -119,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("build"); p.add_argument("--progress", default=None)
     sub.add_parser("up"); sub.add_parser("shell"); sub.add_parser("test"); sub.add_parser("bench")
     sub.add_parser("offline-demo")
+    sub.add_parser("export")
     p = sub.add_parser("run"); p.add_argument("inner", nargs=argparse.REMAINDER)
     a = ap.parse_args(argv)
 
@@ -134,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run(a, ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"])
     if a.cmd == "bench":
         return _run(a, ["python", "benchmarks/bench_edge.py"])
+    if a.cmd == "export":
+        return cmd_export(a)
     if a.cmd == "offline-demo":
         return cmd_offline_demo(a)
     if a.cmd == "run":
