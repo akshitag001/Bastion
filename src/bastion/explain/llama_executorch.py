@@ -24,7 +24,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+from bastion.paths import ROOT  # noqa: E402
 
 
 @dataclass

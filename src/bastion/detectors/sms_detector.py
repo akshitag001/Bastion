@@ -9,9 +9,10 @@ from pathlib import Path
 from bastion.detectors.url_detector import UrlDetector
 from bastion.features import sms_features as sf
 from bastion.fusion import risk as fusion
+from bastion.paths import MODELS
 from bastion.schema import Evidence
 
-DEFAULT_MODEL = Path(__file__).resolve().parents[3] / "models" / "sms_model.joblib"
+DEFAULT_MODEL = MODELS / "sms_model.joblib"
 
 WEIGHTS = {
     "urgency": 0.15, "threat": 0.20, "credential_bait": 0.30, "reward_bait": 0.20,

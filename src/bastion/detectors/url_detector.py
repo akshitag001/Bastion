@@ -7,9 +7,10 @@ from pathlib import Path
 
 from bastion.features import url_features as uf
 from bastion.fusion import risk as fusion
+from bastion.paths import MODELS
 from bastion.schema import Evidence
 
-DEFAULT_MODEL = Path(__file__).resolve().parents[3] / "models" / "url_model.joblib"
+DEFAULT_MODEL = MODELS / "url_model.joblib"
 
 # (feature, condition, weight, human-readable reason)
 RULES = [

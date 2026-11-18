@@ -1,0 +1,19 @@
+# Raspberry Pi 5 resource profile for the Arm64 digital twin.
+# Board facts are from the Raspberry Pi 5 product brief; they describe the TARGET, not the machine the twin runs on.
+name: pi5-8gb
+board: Raspberry Pi 5 (target)
+arch: aarch64
+os_base: Debian 12 Bookworm (Raspberry Pi OS 64-bit is Bookworm-based)
+python: "3.11"            # Bookworm system Python (3.11.2)
+cpu:
+  model: Arm Cortex-A76   # BCM2712
+  cores: 4
+  max_freq_ghz: 2.4
+  inference_threads: 4
+memory:
+  gb: 8                   # selectable: run `python twin/twinctl.py up --ram 4`
+  options_gb: [4, 8]
+accelerators:
+  gpu: none               # VideoCore VII is not used for inference
+  npu: none               # Hailo AI Kit is optional and out of scope for Phase 1
+network: none             # the offline proof runs with docker --network none

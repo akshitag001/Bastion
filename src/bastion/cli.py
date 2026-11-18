@@ -18,7 +18,7 @@ from bastion.pipeline import Bastion, Report
 
 COLORS = {"SAFE": "\033[92m", "SUSPICIOUS": "\033[93m", "MALICIOUS": "\033[91m"}
 RESET, BOLD, DIM = "\033[0m", "\033[1m", "\033[2m"
-ROOT = Path(__file__).resolve().parents[2]
+from bastion.paths import ROOT  # noqa: E402
 
 
 def _print(report: Report, as_json: bool) -> None:
