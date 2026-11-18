@@ -7,22 +7,28 @@ name = "bastion"
 version = "0.1.0"
 description = "Offline on-device phishing URL & scam SMS detection with Llama/ExecuTorch explanations (Bharat AI-SoC PS3)"
 requires-python = ">=3.10"
+# Exact pins live in requirements.txt (models are pickled with those versions).
 dependencies = [
-  "numpy>=1.24",
-  "scikit-learn>=1.3",
+  "numpy>=2.0",
+  "scikit-learn==1.9.1",
   "joblib>=1.3",
-  "pandas>=2.0",
+  "pandas>=2.2",
   "psutil>=5.9",
+  "fastapi>=0.115,<0.164",
+  "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "httpx>=0.27"]
 
 [project.scripts]
 bastion = "bastion.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+bastion = ["web/*", "web/**/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

@@ -47,6 +47,30 @@ def parse(text: str) -> tuple[str, list[str]]:
     return re.sub(r"\s+", " ", explanation), actions[:4]
 
 
+class GuardStop(Exception):
+    """Raised from a streaming token callback to abort generation as soon as the partial
+    output violates the guard. The pipeline treats it like a rejection (template fallback)."""
+
+
+def partial_violation(text: str, ev: Evidence) -> str | None:
+    """Checks that are safe to run on INCOMPLETE output while it streams (so unsafe text never reaches
+    the UI). Length/format checks only make sense on the final text and stay in validate()."""
+    if ev.label in ("MALICIOUS", "SUSPICIOUS") and _SAFE_CLAIMS.search(text):
+        return "contradicts verdict (claims safe)"
+    if ev.label == "SAFE" and _DANGER_CLAIMS.search(text):
+        return "contradicts verdict (claims dangerous)"
+    src = ev.input.lower()
+    # only judge links/numbers that are complete (followed by whitespace), not a half-streamed token
+    for u in _URLISH.findall(text.rsplit(None, 1)[0] if " " in text.strip() else ""):
+        if u.lower().rstrip(".,") not in src and not u.lower().rstrip(".,").endswith("gov.in"):
+            return f"invented link: {u}"
+    for p in _PHONE.findall(text):
+        digits = re.sub(r"\D", "", p)
+        if len(digits) >= 10 and digits not in re.sub(r"\D", "", src) and digits not in {"1930", "1909"}:
+            return f"invented phone number: {p}"
+    return None
+
+
 def validate(raw: str, ev: Evidence) -> GuardResult:
     if not raw or not raw.strip():
         return GuardResult(False, reason="empty output")

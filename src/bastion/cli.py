@@ -79,7 +79,30 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("scan-sms"); p.add_argument("text")
     sub.add_parser("demo")
     sub.add_parser("status")
+    p = sub.add_parser("serve", help="local web app (127.0.0.1 by default)")
+    p.add_argument("--port", type=int, default=8080)
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--lan", action="store_true", help="bind 0.0.0.0 so phones on your network can connect")
+    p = sub.add_parser("bench", help="edge benchmark (JSON -> benchmarks/results/)")
+    p.add_argument("--runs", type=int, default=1000)
+    p.add_argument("--llm", action="store_true")
+    p.add_argument("--llm-runs", type=int, default=3)
     a = ap.parse_args(argv)
+
+    if a.cmd == "serve":
+        host = "0.0.0.0" if a.lan else a.host
+        if host != "127.0.0.1":
+            print("WARNING: Bastion is reachable from other devices on this network (no authentication). "
+                  "Use only on a network you trust.")
+        from bastion.server import serve
+        serve(host=host, port=a.port, use_llm=not a.no_llm)
+        return 0
+    if a.cmd == "bench":
+        import runpy
+        args = ["bench_edge.py", "--runs", str(a.runs), "--llm-runs", str(a.llm_runs)] + (["--llm"] if a.llm else [])
+        sys.argv = args
+        runpy.run_path(str(ROOT / "benchmarks" / "bench_edge.py"), run_name="__main__")
+        return 0
 
     eg = Bastion(use_llm=not a.no_llm)
     if a.cmd == "scan-url":

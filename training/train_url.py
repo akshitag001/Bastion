@@ -105,6 +105,10 @@ def main() -> None:
         t0 = time.time()
         model.fit(X[tr_idx], y[tr_idx])
         train_s = time.time() - t0
+        if "n_jobs" in model.get_params():
+            # train in parallel, but predict single samples on 1 thread: on the device every scan is one URL,
+            # and n_jobs=-1 would spin up a thread pool per prediction (very slow on 4-core Arm / under QEMU).
+            model.set_params(n_jobs=1)
         thr = threshold_for_recall(y[va_idx], model.predict_proba(X[va_idx])[:, 1], a.target_recall)
         proba = model.predict_proba(X[te])[:, 1]
         results[name] = {

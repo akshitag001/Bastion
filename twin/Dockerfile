@@ -13,7 +13,7 @@ FROM --platform=linux/arm64 debian:${DEBIAN_TAG} AS base
 ENV DEBIAN_FRONTEND=noninteractive PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_ROOT_USER_ACTION=ignore \
     PIP_DEFAULT_TIMEOUT=180 PIP_RETRIES=8 VIRTUAL_ENV=/opt/venv PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-venv python3-dev ca-certificates procps \
+        python3 python3-venv python3-dev ca-certificates procps libatomic1 \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/venv
 
@@ -48,6 +48,6 @@ COPY data/samples ./data/samples
 COPY twin ./twin
 # Models are mounted read-only at runtime (-v ./models:/app/models:ro), never baked into the image.
 RUN mkdir -p /app/models /app/benchmarks/results
-ENV BASTION_ROOT=/app BASTION_TWIN_PROFILE=pi5-8gb
+ENV BASTION_ROOT=/app BASTION_TWIN_PROFILE=pi5-8gb OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4
 ENTRYPOINT ["sh", "/app/twin/entrypoint.sh"]
 CMD ["bastion", "status"]

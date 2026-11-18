@@ -45,6 +45,8 @@ def docker_run_args(ram_gb: int, offline: bool, interactive: bool = False) -> li
             "-e", f"BASTION_HOST_ARCH={host_arch()}",
             "-e", f"BASTION_TWIN_PROFILE=pi5-{ram_gb}gb",
             "-e", f"BASTION_LLAMA_THREADS={PROFILE['threads']}",
+            # Pi 5 has 4 cores; without this OpenMP/BLAS size their pools to the HOST's cores.
+            "-e", f"OMP_NUM_THREADS={PROFILE['threads']}", "-e", f"OPENBLAS_NUM_THREADS={PROFILE['threads']}",
             "-v", f"{ROOT / 'models'}:/app/models:ro",
             "-v", f"{ROOT / 'benchmarks' / 'results'}:/app/benchmarks/results"]
     if offline:

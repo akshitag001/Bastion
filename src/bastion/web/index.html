@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bastion</title>
+  <meta name="description" content="Bastion (PS3 edge AI scam guard): offline URL and SMS scam detection with on-device Llama explanations.">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>Bastion</b><small>offline AI guard on your edge device</small></span>
+    </div>
+    <nav aria-label="Pages">
+      <a href="#/scan" data-page="scan">Scan</a>
+      <a href="#/history" data-page="history">History</a>
+      <a href="#/twin" data-page="twin">Device Twin</a>
+      <a href="#/bench" data-page="bench">Benchmarks</a>
+      <a href="#/about" data-page="about">About</a>
+    </nav>
+    <div class="badges">
+      <span id="envBadge" class="badge" title="Runtime environment">…</span>
+      <span id="netBadge" class="badge" title="Network status">…</span>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <!-- SCAN -->
+    <section id="page-scan" class="page" aria-labelledby="scanTitle">
+      <h1 id="scanTitle" class="sr">Scan a link or message</h1>
+      <form id="scanForm" class="scanbox" autocomplete="off">
+        <label for="scanInput">Paste a link or an SMS message</label>
+        <textarea id="scanInput" rows="3" maxlength="2048" placeholder="e.g.  http://sbi-kyc-update.xyz/verify   or   Your parcel is held, pay ₹25 at…" required></textarea>
+        <div class="row">
+          <span id="detected" class="muted">Type or paste to scan</span>
+          <span class="spacer"></span>
+          <button type="submit" class="primary" id="scanBtn">Scan</button>
+        </div>
+        <div class="examples" aria-label="Example inputs">
+          <span class="muted">Examples (handwritten demo samples):</span>
+          <span id="exampleBtns"></span>
+        </div>
+      </form>
+
+      <div id="result" class="result" hidden>
+        <div id="verdictCard" class="verdict">
+          <div class="gauge" aria-hidden="true">
+            <svg viewBox="0 0 120 70"><path class="g-track" d="M10 62a50 50 0 0 1 100 0"/><path id="gaugeArc" class="g-val" d="M10 62a50 50 0 0 1 100 0" pathLength="100"/></svg>
+            <div class="g-num"><span id="riskNum">0</span><small>/100 risk</small></div>
+          </div>
+          <div class="v-text">
+            <div id="verdictLabel" class="v-label">SAFE</div>
+            <div class="muted"><span id="channelLabel">URL</span> · confidence <span id="confNum">0</span> · <span id="modelLabel"></span></div>
+            <div class="muted small">Detected in <span id="detectMs">0</span> ms on <span id="resEnv"></span></div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <h2>Why</h2>
+            <ul id="chips" class="chips"></ul>
+          </div>
+          <div class="card">
+            <h2>What to do</h2>
+            <ul id="actions" class="checklist"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>AI explanation <span class="tag">Llama 3.2 1B · ExecuTorch · on-device</span></h2>
+          <p class="muted small">The verdict comes from the detector. The AI only explains it, and its text is checked before it is shown.</p>
+          <p id="explanation" class="explanation" aria-live="polite"></p>
+          <p id="explainNote" class="muted small"></p>
+        </div>
+
+        <details class="card">
+          <summary>Raw evidence (JSON)</summary>
+          <pre id="rawJson"></pre>
+        </details>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="page-history" class="page" hidden aria-labelledby="histTitle">
+      <div class="row">
+        <h1 id="histTitle">History</h1>
+        <span class="spacer"></span>
+        <label class="muted small"><input type="checkbox" id="privacyToggle"> Privacy mode (store hashes only)</label>
+      </div>
+      <div class="row toolbar">
+        <label for="histFilter" class="muted">Verdict</label>
+        <select id="histFilter"><option value="">All</option><option>MALICIOUS</option><option>SUSPICIOUS</option><option>SAFE</option></select>
+        <span class="spacer"></span>
+        <a class="btn" id="csvBtn" href="/api/history.csv" download>Export CSV</a>
+        <button id="clearBtn" class="danger">Clear history</button>
+      </div>
+      <div class="tablewrap"><table class="table"><thead><tr><th>Time</th><th>Type</th><th>Input</th><th>Verdict</th><th>Risk</th><th>Explainer</th></tr></thead><tbody id="histBody"></tbody></table></div>
+      <p class="muted small">Stored only on this device (SQLite). Nothing is uploaded.</p>
+    </section>
+
+    <!-- DEVICE TWIN -->
+    <section id="page-twin" class="page" hidden aria-labelledby="twinTitle">
+      <div class="row">
+        <h1 id="twinTitle">Device Twin</h1>
+        <span class="spacer"></span>
+        <span id="twinEnv" class="envbig">…</span>
+      </div>
+      <p id="twinNote" class="note"></p>
+      <div class="twin">
+        <div id="twinCanvas" class="twin-canvas" role="img" aria-label="3D model of the Pi 5 twin board showing the current pipeline stage"></div>
+        <div class="twin-side">
+          <div class="card"><h2>Pipeline</h2><ol id="stages" class="stages"></ol></div>
+          <div class="card"><h2>CPU</h2><div id="cores" class="cores"></div><p class="muted small" id="cpuLimit"></p></div>
+          <div class="card"><h2>Memory</h2><div class="bar"><span id="memBar"></span></div><p class="muted small" id="memText"></p></div>
+          <div class="card"><h2>Models</h2><ul id="modelState" class="kv"></ul></div>
+          <div class="card"><h2>Network</h2><p id="twinNet" class="netbig">…</p><p class="muted small">Checked from the route table, no packets sent.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BENCHMARKS -->
+    <section id="page-bench" class="page" hidden aria-labelledby="benchTitle">
+      <h1 id="benchTitle">Benchmarks</h1>
+      <p class="note"><b>Honesty rule:</b> every number is tagged with the environment it was measured in.
+        Only <code>raspberry-pi-5</code> numbers are Raspberry Pi 5 performance. <code>arm64-emulated-qemu</code> proves the Arm software runs; its timings are not Pi 5 timings.</p>
+      <div id="benchBody"></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="page-about" class="page" hidden aria-labelledby="aboutTitle">
+      <h1 id="aboutTitle">About Bastion</h1>
+      <div class="card">
+        <h2>How it works</h2>
+        <svg class="arch" viewBox="0 0 760 150" role="img" aria-label="Pipeline: input, features, detectors, risk fusion, verdict; Llama explainer with guard; advice">
+          <g class="a-box"><rect x="4" y="50" width="96" height="44" rx="8"/><text x="52" y="77">URL / SMS</text></g>
+          <g class="a-box"><rect x="124" y="50" width="104" height="44" rx="8"/><text x="176" y="77">Features</text></g>
+          <g class="a-box"><rect x="252" y="50" width="116" height="44" rx="8"/><text x="310" y="72">Rules + ML</text><text x="310" y="87" class="a-sub">detectors</text></g>
+          <g class="a-box hl"><rect x="392" y="50" width="112" height="44" rx="8"/><text x="448" y="72">Risk fusion</text><text x="448" y="87" class="a-sub">verdict (fixed)</text></g>
+          <g class="a-box llm"><rect x="528" y="6" width="150" height="44" rx="8"/><text x="603" y="27">Llama 3.2 1B</text><text x="603" y="41" class="a-sub">ExecuTorch · Arm CPU</text></g>
+          <g class="a-box"><rect x="528" y="98" width="150" height="44" rx="8"/><text x="603" y="124">Advice (rules)</text></g>
+          <g class="a-box hl"><rect x="694" y="50" width="62" height="44" rx="8"/><text x="725" y="77">Guard</text></g>
+          <g class="a-line"><path d="M100 72h24M228 72h24M368 72h24M504 72c12 0 12-44 24-44M504 72c12 0 12 48 24 48M678 28c10 0 8 32 16 32M678 120c10 0 8-36 16-36"/></g>
+        </svg>
+        <p>The detectors decide the verdict and risk score. Llama only writes a short explanation from the detector's evidence. A guard rejects any explanation that contradicts the verdict or invents links or phone numbers, and the deterministic template is shown instead. Llama can never change the verdict.</p>
+      </div>
+      <div class="grid2">
+        <div class="card"><h2>Privacy</h2><p>Everything runs on this device. No cloud, no external APIs, no telemetry. History stays in a local SQLite file and can be set to store only hashes, or cleared at any time.</p></div>
+        <div class="card"><h2>Limitations</h2><ul class="plain">
+          <li>SMS model trained on the UCI SMS Spam Collection (older, English, mostly UK); Indian UPI/KYC scams are under-represented.</li>
+          <li>PhiUSIIL's benign URLs are all bare homepages, so the URL model only looks at the host part; path signals come from rules.</li>
+          <li>Timings from the emulated twin are not Raspberry Pi 5 timings.</li></ul></div>
+      </div>
+      <div class="card"><h2>Model cards</h2><div id="modelCards" class="muted">Loading…</div></div>
+      <p class="muted small">Bastion (PS3 edge AI scam guard), Bharat AI-SoC Challenge 2026-27. Not related to Microsoft's Azure Bastion. 3D board drawn from simple shapes; three.js (MIT) is bundled locally.</p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+  <script type="module" src="/static/twin.js"></script>
+</body>
+</html>
