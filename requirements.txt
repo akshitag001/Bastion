@@ -1,8 +1,11 @@
-# App + training. Pin exact versions after your first working install on the Pi:
-#   pip freeze > requirements.lock
-numpy>=1.24
-scikit-learn>=1.3
-joblib>=1.3
-pandas>=2.0
-psutil>=5.9
-pytest>=7
+# Exact pins: models/*.joblib are pickled with these versions, and the arm64 twin / Pi must load them.
+# Re-train the models if you change scikit-learn / numpy / joblib.
+# (torch 2.15.0+cpu and executorch 1.6.0 are installed separately: see twin/Dockerfile, docs/EXECUTORCH_NOTES.md)
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.9.1
+joblib==1.6.0
+threadpoolctl==3.8.0
+pandas==3.1.1
+psutil==7.2.2
+pytest==9.2.0
