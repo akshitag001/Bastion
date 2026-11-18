@@ -28,7 +28,7 @@ function box(w, h, d, color, x, y, z, opts = {}) {
 
 function init() {
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power", preserveDrawingBuffer: true });
   } catch (e) {
     host.append(Object.assign(document.createElement("div"), { className: "fallback", textContent: "3D view unavailable (no WebGL). Live metrics are shown on the right." }));
     return false;
@@ -101,6 +101,11 @@ function resize() {
   const w = host.clientWidth || 600, h = host.clientHeight || 420;
   renderer.setSize(w, h, false); renderer.domElement.style.width = "100%"; renderer.domElement.style.height = "100%";
   camera.aspect = w / h; camera.updateProjectionMatrix();
+  // fit the whole board (about 10 x 7.5 units incl. ports) for any aspect ratio
+  const vfov = THREE.MathUtils.degToRad(camera.fov), hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+  const dist = Math.max(5.0 / Math.tan(hfov / 2), 3.8 / Math.tan(vfov / 2));
+  camera.position.copy(new THREE.Vector3(0, 6.2, 7.4).normalize().multiplyScalar(dist));
+  camera.lookAt(0, 0, 0);
 }
 
 function frame() {
@@ -135,3 +140,21 @@ window.addEventListener("bastion:live", e => {
 });
 // the page event may have fired before this module loaded
 if (location.hash.startsWith("#/twin")) window.dispatchEvent(new CustomEvent("bastion:page", { detail: "twin" }));
+// Snapshot hook for automated screenshots: headless browsers may not composite WebGL canvases, so this renders one
+// frame, reads the pixels back with readPixels and overlays them as an <img> (exactly what the renderer drew).
+window.__twinSnapshot = () => {
+  if (!renderer) return false;
+  renderer.render(scene, camera);
+  const gl = renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
+  const px = new Uint8Array(w * h * 4);
+  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"), img = g.createImageData(w, h);
+  for (let y = 0; y < h; y++) img.data.set(px.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);   // flip rows
+  g.putImageData(img, 0, 0);
+  const el = document.createElement("img");
+  el.src = c.toDataURL("image/png");
+  el.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none";
+  host.append(el);
+  return true;
+};

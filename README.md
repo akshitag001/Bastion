@@ -1,72 +1,231 @@
-# Bastion (PS3 edge AI scam guard)
+<div align="center">
 
-*Bastion: the offline AI guard on your edge device.*
+# 🛡️ Bastion (PS3 edge AI scam guard)
 
-On-device phishing & scam detection for the Bharat AI-SoC Challenge 2026-27 (Arm), PS3. (Not related to the Microsoft product "Azure Bastion".)
+### *The offline AI guard on your edge device.*
 
-Offline AI security assistant for Arm edge devices (target: **Raspberry Pi 5, CPU-only**).
-It scans **URLs** and **SMS messages**, gives a verdict + risk score, explains *why* in plain
-language using a **Llama model running on-device via ExecuTorch**, and recommends what to do.
-No cloud. No network calls at inference time.
+**Scam SMS and phishing-link detection that runs entirely on an Arm board, explained in plain English by Llama 3.2 on ExecuTorch.**
+No cloud. No telemetry. Nothing leaves the device.
 
+![Arm64](https://img.shields.io/badge/target-Raspberry%20Pi%205%20·%20aarch64-c51a4a)
+![ExecuTorch](https://img.shields.io/badge/LLM-Llama%203.2%201B%20·%20ExecuTorch%201.6-0467df)
+![Offline](https://img.shields.io/badge/runtime-100%25%20offline-3fb950)
+![Tests](https://img.shields.io/badge/tests-53%20passing%20on%20x86%20%2B%20aarch64-3fb950)
+![Python](https://img.shields.io/badge/python-3.11-3776ab)
+
+*Bharat AI-SoC Challenge 2026-27 (Arm) · PS3: On-Device Threat, Phishing & Scam Detection*
+*(Not related to Microsoft's "Azure Bastion".)*
+
+<img src="docs/screenshots/scan-scam-sms.png" alt="Bastion flags an SBI KYC scam SMS as MALICIOUS (risk 96/100), served from the offline arm64 Pi 5 twin" width="900">
+
+<sub>Real screenshot: the web app served from the <b>aarch64 Pi 5 digital twin with no network</b> (note the <code>arm64-emulated-qemu</code> and <code>OFFLINE</code> badges).</sub>
+
+</div>
+
+---
+
+## ✨ What it does
+
+Paste a link or an SMS. In milliseconds Bastion gives you:
+
+| | |
+|---|---|
+| 🚦 **A verdict** | `SAFE` / `SUSPICIOUS` / `MALICIOUS` with a 0-100 risk score and calibrated confidence |
+| 🔍 **The why** | the exact warning signs it found (threats, KYC/OTP bait, look-alike domains, raw IPs, links inside the SMS…) |
+| 🧠 **A plain-English explanation** | written by **Llama 3.2 1B running on the Arm CPU through ExecuTorch**, streamed live |
+| ✅ **What to do next** | block, report (1930 / cybercrime.gov.in / 1909), verify, freeze your account |
+
+> **The detector decides. Llama only explains.** The LLM never sees the verdict as negotiable and can never change it.
+> A guard checks every token *while it streams* and aborts the moment the text contradicts the verdict or invents a link
+> or phone number, so unsafe text never reaches the screen. (`explain/guard.py`, `pipeline.py`, covered by tests.)
+
+## 📸 Screenshots
+
+All captured from the real app running inside the **offline arm64 Pi 5 twin** (`docker compose up`).
+
+| 🍓 Device Twin (3D, live) | 📱 On a phone |
+|---|---|
+| <img src="docs/screenshots/device-twin.png" alt="3D Pi 5 twin board with live CPU, memory, pipeline stage, model state and OFFLINE network status" width="560"> | <img src="docs/screenshots/phone-scan.png" alt="Bastion scan result on a phone-sized screen" width="230"> |
+
+| ✅ A genuine link stays SAFE | 📊 Honest benchmarks |
+|---|---|
+| <img src="docs/screenshots/scan-safe-url.png" alt="IRCTC deep link rated SAFE" width="420"> | <img src="docs/screenshots/bench.png" alt="Benchmarks page grouped by environment tag" width="420"> |
+
+| 🕘 Local history (privacy mode, CSV export) | ℹ️ About & model cards |
+|---|---|
+| <img src="docs/screenshots/history.png" alt="Scan history table" width="420"> | <img src="docs/screenshots/about.png" alt="About page with architecture and model cards" width="420"> |
+
+**The twin, proven from the terminal:** `uname -m` = `aarch64`, Pi 5 limits, **no route to the internet**, real verdicts:
+
+<img src="docs/screenshots/twin-offline-proof.png" alt="Terminal: offline demo inside the arm64 twin with an empty route table" width="820">
+
+<details>
+<summary>The full test suite running <b>inside</b> the aarch64 twin</summary>
+
+<img src="docs/screenshots/twin-pytest.png" alt="53 tests passing inside the linux/arm64 twin" width="820">
+</details>
+
+## 🏗️ How it works
+
+```mermaid
+flowchart LR
+    IN["📩 URL / SMS<br/>(untrusted input)"] --> F["Features<br/>lexical URL · SMS indicators"]
+    F --> R["Rule engine"]
+    F --> M["ML model<br/>calibrated, recall/FPR-tuned"]
+    R --> FU["⚖️ Risk fusion<br/><b>verdict is fixed here</b>"]
+    M --> FU
+    FU -->|instant| UI["🖥️ Verdict card<br/>+ why + actions"]
+    FU -->|evidence only| L["🧠 Llama 3.2 1B<br/>ExecuTorch · XNNPACK<br/>Arm CPU"]
+    L -->|token stream| G{"🛡️ Guard<br/>per token"}
+    G -->|passes| UI
+    G -->|contradiction / invented link| T["Template<br/>explanation"] --> UI
 ```
-Input (URL / SMS)
-  -> features (lexical URL features, SMS social-engineering indicators)    src/bastion/features/
-  -> detectors (rules + ML model)                                          src/bastion/detectors/
-  -> risk fusion (0-100 score, SAFE / SUSPICIOUS / MALICIOUS)              src/bastion/fusion/
-  -> Llama 3.2 1B on ExecuTorch writes a short explanation                 src/bastion/explain/
-       -> guard: rejects output that contradicts the verdict / invents links
-       -> fallback template if Llama is missing, crashes or is rejected
-  -> remediation advice (deterministic, always shown)                      src/bastion/advice/
-```
 
-**Design rule:** the detector decides; Llama only explains. The verdict can never be changed by the LLM
-(enforced in `explain/guard.py` and `pipeline.py`, covered by tests).
+| Layer | What we built | Where |
+|---|---|---|
+| Detectors | 27 offline URL features + rules; SMS social-engineering indicators + TF-IDF model; links inside an SMS are scored by the URL detector | `src/bastion/features`, `detectors` |
+| Fusion | ML probability aligned so the validated operating threshold lands exactly on the SUSPICIOUS boundary; rules can only add risk | `src/bastion/fusion/risk.py` |
+| Explainer | Llama 3.2 1B Instruct → ExecuTorch `.pte` (8da4w, XNNPACK, KV cache). Loaded **once**, streamed token by token | `src/bastion/explain` |
+| Safety | prompt-injection sanitising, `<data>` fencing, verdict lock, streaming guard, template fallback | `explain/prompts.py`, `explain/guard.py` |
+| App | FastAPI + vanilla JS, SSE streaming, SQLite history (hash-only privacy mode), rate & size limits, localhost by default | `src/bastion/server.py`, `web/` |
+| Twin | arm64 Docker image, Pi 5 profile, environment tagging, offline Compose, 3D dashboard | `twin/`, `src/bastion/env.py` |
 
-## Quick start (laptop or Raspberry Pi 5, 64-bit OS)
+## 📈 Results (every number has a JSON behind it)
+
+**Accuracy: the deployed detector, end-to-end** (rules + ML + fusion) on held-out test data:
+
+| Channel | Recall | Precision | False-positive rate | Extra check | Source |
+|---|---|---|---|---|---|
+| **SMS** (UCI SMS Spam, deduplicated) | **0.944** | **0.951** | **0.0066** | 1,028 test messages | [`sms_train_20261119_001008.json`](benchmarks/results/sms_train_20261119_001008.json) |
+| **URL** (PhiUSIIL, domain-grouped split) | **0.737** | **0.983** | **0.016** | flags **2.6 %** of 10,000 popular real sites (Tranco) | [`url_train_20261119_000943.json`](benchmarks/results/url_train_20261119_000943.json) |
+
+**Speed: per-scan detection latency (p50), tagged by environment:**
+
+| Environment | URL | SMS | Source |
+|---|---|---|---|
+| `x86-native` (dev laptop) | 1.5 ms | 2.4 ms | `benchmarks/results/edge_x86-native_*.json` |
+| `arm64-emulated-qemu` (Pi 5 twin on x86) | 26.8 ms | 68.2 ms | `benchmarks/results/edge_arm64-emulated-qemu_*.json` |
+| `raspberry-pi-5` | *pending real hardware* | | |
+
+> ⚠️ **Honesty rule.** Emulated timings prove the Arm software runs; they are **not** Raspberry Pi 5 timings (here
+> emulation is ~18-29× slower than native x86). Every benchmark JSON and every UI metric carries its environment tag
+> (`src/bastion/env.py`), and only `raspberry-pi-5` numbers are ever called Pi 5 performance.
+
+## 🔬 What we found along the way (the interesting part)
+
+<details open>
+<summary><b>1. A "99 % accurate" URL model that would have flagged 99.5 % of the real web</b></summary>
+
+PhiUSIIL's benign URLs are **100 % `https://www.` homepages**; phishing URLs are 41 % `www.`, 49 % https and 28 % have paths.
+A model trained on it learns *collection habits*, not phishing, and our own test split carries the same artefacts, so it
+looked perfect (FPR 0.025). We added an outside check, the false-positive rate on popular legitimate domains (Tranco), and
+the "host" model flagged **99.5 %** of them (`github.com` → 1.00 phishing; `www.github.com` → 0.34).
+Fix: the ML model sees the host **without scheme or `www.`**, tuned on validation for ≤ 2 % FPR. Now the two independent
+benign sources agree (1.6 % vs 2.6 %). The price is honest: URL recall 0.737, not 0.95. Full story: [`docs/DATASETS.md`](docs/DATASETS.md).
+</details>
+
+<details>
+<summary><b>2. A 0.95-recall threshold chosen from 37 examples gave a 16 % false-alarm rate</b></summary>
+
+The SMS operating threshold was first picked on a validation half with only 37 scams; one odd message dragged it to 0.03.
+Now it comes from 5-fold out-of-fold predictions over 422 scams: FPR 0.163 → **0.0066** at the same recall.
+</details>
+
+<details>
+<summary><b>3. The twin caught real deployment bugs before we had a Pi</b></summary>
+
+| Found in the arm64 twin | Fix |
+|---|---|
+| PyPI's aarch64 `torch` pulls **>1 GB of CUDA** libraries | `torch==2.15.0+cpu` from the PyTorch CPU index |
+| ExecuTorch's PyPI wheel has **no Python LLM runner** | own decode loop over `executorch.runtime` (persistent, streaming) |
+| Tokenizer needs `libatomic.so.1` | added to the image (present on Pi OS) |
+| Thread pools sized to the host's 32 cores | `n_jobs=1`, `OMP_NUM_THREADS=4`, single-thread scoring: HistGBDT 6.2 → 1.4 ms |
+| Model paths broke on non-editable installs | `BASTION_ROOT` |
+</details>
+
+## 🚀 Quick start (60 seconds)
 
 ```bash
-bash scripts/setup.sh
-source .venv/bin/activate
-bastion status            # what is loaded: rules / ML models / Llama runtime
-bastion demo              # runs handwritten demo URLs + SMS
-bastion scan-url "http://paypal.com.account-verify-secure.xyz/signin"
+git clone <this repo> bastion && cd bastion
+python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -r requirements.txt && pip install -e .
+bastion serve                                         # → http://127.0.0.1:8080
+```
+
+```bash
 bastion scan-sms "Your SBI account will be blocked today. Update KYC at http://sbi-kyc.xyz"
-bastion --json scan-sms "..."   # machine-readable
-pytest -q                   # 26 tests
+bastion scan-url "http://paypal.com.account-verify-secure.xyz/signin"
+bastion demo            # handwritten demo samples (not benchmark data)
+bastion status          # environment tag, network, models, Llama runtime
+bastion serve --lan     # open it from your phone on the same Wi-Fi (no auth: trusted networks only)
+bastion bench           # latency JSON, tagged with the environment
 ```
 
-The app works immediately in **rules-only** mode. Train ML models and add Llama to reach the full system.
+## 🍓 The Raspberry Pi 5 digital twin
 
-## Train the detectors (real public data)
+The real aarch64 software stack (Debian Bookworm, Python 3.11.2, scikit-learn, ExecuTorch + XNNPACK) under the Pi 5's limits
+(4 CPUs, 8 GB or 4 GB). On an x86 laptop it runs under QEMU; on Apple Silicon / Graviton it runs natively. [`docs/TWIN.md`](docs/TWIN.md)
 
 ```bash
-python scripts/download_data.py sms url        # needs internet once; verify licences -> docs/DATASETS.md
-python training/train_sms.py --uci data/raw/SMSSpamCollection
-python training/train_url.py --csv data/raw/<PhiUSIIL csv> --url-col URL --label-col label --phish-value <value meaning phishing>
+python twin/twinctl.py setup          # checks Docker, buildx, arm64 support
+python twin/twinctl.py build          # bastion-pi5-twin:dev (linux/arm64)
+python twin/twinctl.py test           # pytest on aarch64
+python twin/twinctl.py offline-demo   # --network none → benchmarks/results/offline_proof_<date>.log
+python twin/twinctl.py bench          # tagged arm64-emulated-qemu on x86
+docker compose up                     # the web app from the OFFLINE twin → http://127.0.0.1:8080
 ```
-Each trainer compares 3 models, prints precision / recall / F1 / FPR / FNR / ROC-AUC, model size and
-single-sample latency, saves the best model to `models/`, and writes a full JSON report to `benchmarks/results/`.
-The URL trainer splits **by domain** and runs a **leak probe** (see docs/DATASETS.md).
 
-## Add Llama via ExecuTorch (mandatory for the competition)
+`docker compose` puts Bastion on an `internal` network with no gateway (it really cannot reach the internet), and a tiny
+nginx proxy publishes the UI on your loopback interface only. Port taken? `BASTION_UI_PORT=8090 docker compose up`.
 
-1. Accept the Llama 3.2 licence and download `Llama-3.2-1B-Instruct` (original Meta checkpoint).
-2. `bash scripts/export_llama.sh` on your dev machine -> `models/llama/llama3_2_1b_8da4w.pte` + `tokenizer.model`.
-3. `bash scripts/build_runner_pi.sh` on the Pi -> `models/llama/llama_main`.
-4. Copy the `.pte` and tokenizer to the Pi's `models/llama/`, then `bastion status` should say **READY**.
-
-Paths can be overridden with `BASTION_LLAMA_RUNNER`, `BASTION_LLAMA_PTE`, `BASTION_LLAMA_TOKENIZER`,
-`BASTION_LLAMA_THREADS`. **Both scripts are untested templates. Verify them against the current ExecuTorch docs**
-(see docs/EXECUTORCH_NOTES.md).
-
-## Benchmark on the device
+### On a real Raspberry Pi 5 (64-bit Raspberry Pi OS)
 
 ```bash
-python benchmarks/bench_edge.py                  # detector latency p50/p95/p99, RAM, CPU, throughput, model size
-python benchmarks/bench_edge.py --llm --llm-runs 5
+bash scripts/setup.sh                 # venv + torch 2.15.0+cpu + ExecuTorch 1.6.0 + pinned deps
+source .venv/bin/activate && bastion status   # → environment: raspberry-pi-5
 ```
-Run the same commands on laptop and Pi; results are saved as JSON per machine.
 
-## Status
-v0.1 (scaffold + working rules/ML pipeline). See `docs/PROGRESS.md` for what is done, what is next, and open questions.
+## 🧠 Llama 3.2 1B on ExecuTorch
+
+1. Accept the Llama 3.2 licence for [`meta-llama/Llama-3.2-1B-Instruct`](https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct) and create a read token.
+2. Export (x86 container, versioned config [`twin/export/llama3_2_1b_8da4w.yaml`](twin/export/llama3_2_1b_8da4w.yaml)):
+   ```bash
+   export HF_TOKEN=<token>               # PowerShell: $env:HF_TOKEN = "<token>"   (never written to disk)
+   python twin/twinctl.py export         # → models/llama/llama3_2_1b_8da4w.pte + tokenizer.model
+   ```
+3. `bastion status` → `Llama (ExecuTorch): READY, ok (runtime backend)`. The model is loaded once and kept resident.
+   *(The runtime backend is unit-tested with a stand-in model; its first run with the real `.pte` is pending the licence approval.)*
+
+Verified versions, commands and API details: [`docs/EXECUTORCH_NOTES.md`](docs/EXECUTORCH_NOTES.md).
+
+## 🔒 Privacy & security
+
+- **Offline by design:** no external calls at runtime, all frontend assets (incl. three.js) vendored; tested.
+- History lives in a local SQLite file; **privacy mode** stores only SHA-256 hashes; one-click clear.
+- Untrusted text is rendered with `textContent` only; inputs size-limited (URL 2,048 / SMS 2,000 chars) and rate-limited.
+- Server binds `127.0.0.1` by default; the app loads models only from its own `models/` folder; no `shell=True`.
+
+## 🗂️ Repository
+
+```
+src/bastion/          features · detectors · fusion · explain (Llama, guard) · advice · server · env · web UI
+training/             trainers: validation-only selection, calibration, operating points, end-to-end eval
+benchmarks/results/   every number in this README (JSON + logs); archive/ = superseded runs cited in docs
+twin/                 arm64 Dockerfile, Pi 5 profile, twinctl, export container, nginx
+docs/                 DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
+tests/                53 tests: features, detectors, guard, injection, Llama backends, API, UI, training
+```
+
+## ⚠️ Limitations (and the Phase 2 plan)
+
+- **No real Pi 5 numbers yet.** The twin proves correctness on aarch64 and offline operation, not Pi 5 speed.
+- **URL recall is 0.737** at a 2 % false-alarm budget: lexical offline features can't do better on this data.
+  Phase 2: an on-device phishing blocklist snapshot (Safe-Browsing-style), opt-in page-content features, better benign data.
+- **SMS data is dated and mostly UK English;** Indian UPI/KYC/courier scams are under-represented. Phase 2: an Indian test set.
+- Llama export is pending a Hugging Face licence approval; explanations currently fall back to the deterministic template.
+
+## 📜 Data & credits
+
+UCI SMS Spam Collection and PhiUSIIL Phishing URL Dataset (CC BY 4.0) · Tranco list (evaluation only) ·
+Llama 3.2 (Meta, Llama 3.2 Community License) · ExecuTorch & PyTorch (BSD) · three.js (MIT, vendored) · FastAPI, scikit-learn.
+The 3D board is drawn from simple shapes; no Raspberry Pi logos or product images are used.

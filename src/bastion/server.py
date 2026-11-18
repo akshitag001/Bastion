@@ -266,7 +266,7 @@ def create_app(use_llm: bool = True, history: History | None = None, preload_llm
                 d = json.loads(p.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 continue
-            out.append({"file": p.name, "environment": d.get("environment", "untagged (training run)"),
+            out.append({"file": p.name, "environment": d.get("environment", "accuracy (training runs; hardware-independent)"),
                         "data": d})
         return {"items": out, "timing_notes": env.TIMING_NOTES}
 

@@ -53,7 +53,7 @@ def _status(eg: Bastion) -> None:
     print(f"SMS detector : {eg.sms.model_name if eg.sms.model else 'rules-only (train with training/train_sms.py)'}")
     if eg.llm:
         ok, why = eg.llm.available()
-        print(f"Llama (ExecuTorch): {'READY' if ok else 'not ready - ' + why}")
+        print(f"Llama (ExecuTorch): {'READY, ' + why if ok else 'not ready - ' + why}")
         print(f"  runner={eg.llm.cfg.runner}\n  pte={eg.llm.cfg.model_path}\n  tokenizer={eg.llm.cfg.tokenizer_path}")
 
 

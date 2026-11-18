@@ -100,8 +100,13 @@ function renderResult(r) {
   ex.textContent = r.explanation; ex.classList.remove("streaming");
   $("#explainNote").textContent = r.explain_stream ? "Generating the AI explanation on this device…"
     : `Template explanation (${r.explainer_note}).`;
+  setExplainTag(r.explain_stream ? "llama" : r.explainer);
   $("#rawJson").textContent = JSON.stringify(r, null, 2);
   card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function setExplainTag(kind) {
+  // say what actually produced the text: the on-device Llama, or the deterministic template
+  $("#explainTag").textContent = kind === "template" ? "deterministic template (Llama not used)" : "Llama 3.2 1B · ExecuTorch · on-device";
 }
 function renderActions(actions) {
   const ul = $("#actions"); ul.replaceChildren();
@@ -121,6 +126,7 @@ function startStream(r) {
     const f = JSON.parse(ev.data);
     ex.classList.remove("streaming");
     ex.textContent = f.explanation;                   // guarded final text replaces the stream
+    setExplainTag(f.explainer === "llama-executorch" ? "llama" : "template");
     renderActions(f.actions);
     const t = f.timings_ms || {};
     const s = t.llm_stats || {};
@@ -178,7 +184,9 @@ async function loadBench() {
   if (!d.items.length) { box.append(el("p", { class: "muted", text: "No results yet. Run `bastion bench` or the trainers." })); return; }
   const groups = {};
   d.items.forEach(i => (groups[i.environment] ||= []).push(i));
-  for (const [envName, items] of Object.entries(groups)) {
+  const order = Object.keys(groups).sort((p, q) => (p.startsWith("accuracy") ? 1 : 0) - (q.startsWith("accuracy") ? 1 : 0));
+  for (const envName of order) {
+    const items = groups[envName];
     const g = el("div", { class: "card envgroup" }, el("h2", { text: envName }));
     if (d.timing_notes[envName]) g.append(el("p", { class: "muted small", text: d.timing_notes[envName] }));
     for (const it of items) {
@@ -187,17 +195,24 @@ async function loadBench() {
       const m = el("div", { class: "metrics" });
       const add = (label, val) => m.append(el("div", { class: "metric" }, el("b", { text: String(val) }), el("span", { text: label })));
       if (x.task === "url" || x.task === "sms") {
-        const best = x.models[x.selected];
-        const t = best["test_at_0.5"];
-        add("selected model", x.selected); add("F1 @0.5", fmt(t.f1, 4)); add("recall @0.5", fmt(t.recall, 4));
-        add("FPR @0.5", fmt(t.fpr, 4)); add("ROC-AUC", fmt(t.roc_auc, 4)); add("size KB", Math.round(best.size_bytes / 1024));
-        if (x.leak_probe_trivial_features) add("leak probe AUC", fmt(x.leak_probe_trivial_features.roc_auc, 3));
-        g.append(m);
+        const e2e = x.end_to_end_test;
+        if (e2e) {
+          const w = e2e.warned_suspicious_or_malicious;
+          g.append(el("p", { class: "small", text: `Deployed detector, end-to-end on the held-out test split (${w.n} items; warned = SUSPICIOUS or MALICIOUS)` }));
+          add("recall", fmt(w.recall, 3)); add("precision", fmt(w.precision, 3)); add("false-positive rate", fmt(w.fpr, 4));
+          add("F1", fmt(w.f1, 3)); add("ROC-AUC (risk)", fmt(w.roc_auc, 3));
+          const fp = x.popular_domain_fp_check;
+          if (fp) add("popular sites flagged (Tranco)", (fp.report_ranks_2001_12000.warned_rate * 100).toFixed(1) + "%");
+          if (x.calibration) add("operating threshold", fmt(x.calibration.operating_threshold, 3));
+          add("model", x.selected + (x.view ? ` (${x.view} view)` : ""));
+          g.append(m);
+        }
+        g.append(el("p", { class: "small muted", text: "Candidate classifiers (validation ROC-AUC, used for model selection):" }));
         const chart = el("div", { class: "barchart" });
         for (const [name, r] of Object.entries(x.models)) {
-          const f1 = r["test_at_0.5"].f1;
-          chart.append(el("div", { class: "br" }, el("span", { text: name }),
-            el("span", { class: "bt" }, Object.assign(el("i"), { style: `width:${f1 * 100}%` })), el("span", { text: `F1 ${fmt(f1, 3)}` })));
+          const auc = r.val_roc_auc ?? r["test_at_0.5"].roc_auc;
+          chart.append(el("div", { class: "br" }, el("span", { text: name + (name === x.selected ? " ✓" : "") }),
+            el("span", { class: "bt" }, Object.assign(el("i"), { style: `width:${auc * 100}%` })), el("span", { text: `AUC ${fmt(auc, 3)}` })));
         }
         g.append(chart);
       } else {
@@ -220,10 +235,11 @@ async function loadAbout() {
   d.items.filter(i => i.data.task).forEach(i => { latest[i.data.task] = i; });
   if (!Object.keys(latest).length) { box.textContent = "No trained models yet (rules-only mode)."; return; }
   for (const [task, it] of Object.entries(latest)) {
-    const x = it.data, t = x.models[x.selected]["test_at_0.5"];
+    const x = it.data, w = x.end_to_end_test ? x.end_to_end_test.warned_suspicious_or_malicious : x.models[x.selected]["test_at_0.5"];
+    const fp = x.popular_domain_fp_check ? ` Flags ${(x.popular_domain_fp_check.report_ranks_2001_12000.warned_rate * 100).toFixed(1)}% of popular legitimate sites (Tranco).` : "";
     box.append(el("p", {}, el("b", { text: `${task.toUpperCase()}: ${x.selected}` }),
-      document.createTextNode(` trained on ${x.dataset} (${x.rows} rows${x.view ? ", " + x.view + " view" : ""}). `
-        + `Test F1 ${t.f1}, recall ${t.recall}, FPR ${t.fpr}, ROC-AUC ${t.roc_auc}. Source: ${it.file}`)));
+      document.createTextNode(` trained on ${x.dataset} (${x.rows || x.rows_after_dedup} rows${x.view ? ", " + x.view + " view" : ""}). `
+        + `Deployed detector on held-out test data: recall ${w.recall}, precision ${w.precision}, false-positive rate ${w.fpr}.${fp} Source: ${it.file}`)));
   }
 }
 

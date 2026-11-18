@@ -1,0 +1,59 @@
+{
+  "environment": "arm64-emulated-qemu",
+  "environment_detail": {
+    "environment": "arm64-emulated-qemu",
+    "reason": "cpuinfo CPU implementer 0x00 (QEMU synthetic CPU)",
+    "timing_note": "aarch64 emulated by QEMU on x86: functionally correct, timings NOT representative of a Raspberry Pi 5 (usually many times slower).",
+    "machine": "aarch64",
+    "system": "Linux",
+    "python": "3.11.2",
+    "cpu_implementer": "0x00",
+    "cpu_part": "0x051",
+    "cpu_limit": 4.0,
+    "memory_limit_bytes": 8589934592,
+    "host_arch_hint": "x86_64",
+    "twin_profile": "pi5-8gb"
+  },
+  "machine": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-aarch64-with-glibc2.36",
+    "arch": "aarch64",
+    "cpu_count": 32,
+    "ram_total_mb": 31938,
+    "python": "3.11.2",
+    "cpu_temp_c_start": null,
+    "cpu_temp_c_end": null
+  },
+  "models": {
+    "url": "url-hist_gbdt",
+    "sms": "sms-tfidf_logreg-cal"
+  },
+  "model_files_bytes": {
+    "sms_model.joblib": 539736,
+    "url_model.joblib": 457893
+  },
+  "load_ms": 17372.1,
+  "rss_mb": {
+    "before_load": 49.6,
+    "after_load": 320.8,
+    "peak_after_bench": 316.1
+  },
+  "note": "inputs are handwritten demo samples; latency only, not accuracy",
+  "url_detect": {
+    "runs": 1000,
+    "mean_ms": 41.7863,
+    "p50_ms": 26.7574,
+    "p95_ms": 75.7457,
+    "p99_ms": 83.2966,
+    "throughput_per_s": 23.9,
+    "cpu_percent_during": 0.0
+  },
+  "sms_detect": {
+    "runs": 1000,
+    "mean_ms": 61.8239,
+    "p50_ms": 68.2351,
+    "p95_ms": 104.7104,
+    "p99_ms": 157.8919,
+    "throughput_per_s": 16.2,
+    "cpu_percent_during": 0.0
+  }
+}

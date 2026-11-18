@@ -1,0 +1,13 @@
+$ docker run --rm --platform linux/arm64 --cpus=4 --memory=8g -e BASTION_HOST_ARCH=x86_64 -e BASTION_TWIN_PROFILE=pi5-8gb -e BASTION_LLAMA_THREADS=4 -e OMP_NUM_THREADS=4 -e OPENBLAS_NUM_THREADS=4 -v .\models:/app/models:ro -v .\benchmarks\results:/app/benchmarks/results bastion-pi5-twin:dev python -m pytest -q -p no:cacheprovider tests
+================================================================
+ Bastion Pi 5 digital twin
+  uname -m      : aarch64
+  python        : 3.11.2
+  cpu limit     : 4.0
+  memory limit  : 8.0 GiB
+  environment   : arm64-emulated-qemu  (cpuinfo CPU implementer 0x00 (QEMU synthetic CPU))
+  network       : ONLINE
+  note          : aarch64 emulated by QEMU on x86: functionally correct, timings NOT representative of a Raspberry Pi 5 (usually many times slower).
+================================================================
+.....................................................                    [100%]
+53 passed in 559.87s (0:09:19)

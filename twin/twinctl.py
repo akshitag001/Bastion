@@ -36,7 +36,7 @@ def host_arch() -> str:
 
 
 def sh(cmd: list[str], check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
-    print("$ " + " ".join(cmd), flush=True)
+    print("$ " + " ".join(cmd).replace(str(ROOT), "."), flush=True)   # repo-relative: logs carry no local paths
     return subprocess.run(cmd, check=check, text=True, capture_output=capture)
 
 

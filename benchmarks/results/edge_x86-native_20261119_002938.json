@@ -1,0 +1,59 @@
+{
+  "environment": "x86-native",
+  "environment_detail": {
+    "environment": "x86-native",
+    "reason": "machine amd64",
+    "timing_note": "x86 development machine: not Arm, not representative of a Raspberry Pi 5.",
+    "machine": "AMD64",
+    "system": "Windows",
+    "python": "3.11.9",
+    "cpu_implementer": null,
+    "cpu_part": null,
+    "cpu_limit": 32.0,
+    "memory_limit_bytes": 68393086976,
+    "host_arch_hint": null,
+    "twin_profile": null
+  },
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "arch": "AMD64",
+    "cpu_count": 32,
+    "ram_total_mb": 65225,
+    "python": "3.11.9",
+    "cpu_temp_c_start": null,
+    "cpu_temp_c_end": null
+  },
+  "models": {
+    "url": "url-hist_gbdt",
+    "sms": "sms-tfidf_logreg-cal"
+  },
+  "model_files_bytes": {
+    "sms_model.joblib": 539736,
+    "url_model.joblib": 457893
+  },
+  "load_ms": 1326.4,
+  "rss_mb": {
+    "before_load": 20.0,
+    "after_load": 163.7,
+    "peak_after_bench": 164.0
+  },
+  "note": "inputs are handwritten demo samples; latency only, not accuracy",
+  "url_detect": {
+    "runs": 1000,
+    "mean_ms": 1.6385,
+    "p50_ms": 1.5246,
+    "p95_ms": 2.4475,
+    "p99_ms": 3.7857,
+    "throughput_per_s": 610.3,
+    "cpu_percent_during": 17.1
+  },
+  "sms_detect": {
+    "runs": 1000,
+    "mean_ms": 2.859,
+    "p50_ms": 2.3862,
+    "p95_ms": 4.4411,
+    "p99_ms": 7.2283,
+    "throughput_per_s": 349.8,
+    "cpu_percent_during": 32.8
+  }
+}
