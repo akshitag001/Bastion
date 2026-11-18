@@ -166,3 +166,14 @@ def test_scanning_makes_no_network_calls(monkeypatch):
     eg = Bastion(use_llm=False, url_model=None, sms_model=None)
     eg.scan_url("http://paypal-verify.xyz/login")
     eg.scan_sms("Win Rs 5000 now, click bit.ly/abc")
+
+
+def test_url_views_remove_dataset_artefacts():
+    from bastion.features import url_features as uf
+    # www. and scheme must not change what the ML model sees (PhiUSIIL: benign = 100 % https://www.)
+    assert uf.canon_view("https://www.github.com/a/b?x=1") == uf.canon_view("http://github.com") == "http://github.com/"
+    assert uf.domain_view("https://docs.google.com/forms/x") == "http://google.com/"
+    assert uf.domain_view("http://paypal.com.verify-account.xyz/login") == "http://verify-account.xyz/"
+    assert uf.domain_view("https://www.irctc.co.in/nget") == "http://irctc.co.in/"
+    assert uf.domain_view("http://192.168.1.10/login") == "http://192.168.1.10/"
+    assert uf.host_view("https://www.github.com/a") == "https://www.github.com/"

@@ -150,7 +150,7 @@
         <div class="card"><h2>Privacy</h2><p>Everything runs on this device. No cloud, no external APIs, no telemetry. History stays in a local SQLite file and can be set to store only hashes, or cleared at any time.</p></div>
         <div class="card"><h2>Limitations</h2><ul class="plain">
           <li>SMS model trained on the UCI SMS Spam Collection (older, English, mostly UK); Indian UPI/KYC scams are under-represented.</li>
-          <li>PhiUSIIL's benign URLs are all bare homepages, so the URL model only looks at the host part; path signals come from rules.</li>
+          <li>PhiUSIIL's benign URLs are all <code>https://www.</code> homepages, so the URL model only sees the host without scheme or <code>www.</code>, tuned for about 2% false alarms. It catches roughly 3 in 4 phishing links in testing; path tricks are caught by rules.</li>
           <li>Timings from the emulated twin are not Raspberry Pi 5 timings.</li></ul></div>
       </div>
       <div class="card"><h2>Model cards</h2><div id="modelCards" class="muted">Loading…</div></div>

@@ -2,6 +2,7 @@
 
   python scripts/download_data.py sms      # UCI SMS Spam Collection
   python scripts/download_data.py url      # PhiUSIIL Phishing URL dataset (UCI)
+  python scripts/download_data.py tranco   # Tranco top-1M (false-positive check; list changes daily)
 
 !! Verify each URL, licence and label convention before use and record it in docs/DATASETS.md.
    PhiUSIIL: check its documentation for which label value means phishing; pass it to
@@ -20,6 +21,8 @@ RAW = Path(__file__).resolve().parents[1] / "data" / "raw"
 SOURCES = {
     "sms": ("https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip", "sms_spam.zip"),
     "url": ("https://archive.ics.uci.edu/static/public/967/phiusiil+phishing+url+dataset.zip", "phiusiil.zip"),
+    # popular-domain false-positive check only (training/train_url.py --fp-check data/raw/top-1m.csv)
+    "tranco": ("https://tranco-list.eu/top-1m.csv.zip", "tranco_top1m.zip"),
 }
 
 

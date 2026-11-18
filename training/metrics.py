@@ -118,3 +118,13 @@ def end_to_end(analyze_fn, inputs, y_true) -> dict:
         "latency_ms": {"p50": round(times[len(times) // 2], 4), "p95": round(times[int(len(times) * 0.95) - 1], 4),
                        "mean": round(statistics.mean(times), 4)},
     }
+
+
+def threshold_for_fpr(y_true, proba, target_fpr: float = 0.02) -> float:
+    """Lowest threshold whose false-positive rate on the given negatives stays <= target_fpr."""
+    y_true = np.asarray(y_true).astype(int)
+    neg = np.sort(np.asarray(proba)[y_true == 0])[::-1]
+    if len(neg) == 0:
+        return 0.5
+    k = int(np.floor(target_fpr * len(neg)))          # number of false positives allowed
+    return float(neg[k] + 1e-9) if k < len(neg) else 0.0

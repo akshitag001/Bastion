@@ -118,20 +118,32 @@ def main() -> None:
     # Model selection on VALIDATION ROC-AUC only; ties -> smaller model.
     best = max(results, key=lambda k: (results[k]["val_roc_auc"], -results[k]["size_bytes"]))
     print(f"selected (by validation ROC-AUC): {best}")
-    # No refit on train+val: the operating threshold below is chosen for THIS fitted model.
-    # Validation is small (~75 scams), so sigmoid (2 parameters) rather than isotonic calibration.
-    va_a, va_b = train_test_split(list(range(len(X_va))), test_size=0.5, stratify=y_va, random_state=SEED)
-    cal, op_thr = calibrate_and_threshold(fitted[best], [X_va[i] for i in va_a], y_va[va_a],
-                                          [X_va[i] for i in va_b], y_va[va_b], a.target_recall, method="sigmoid")
-    p_te_cal = cal.predict_proba(X_te)[:, 1]
-    calibrated = {"method": "sigmoid", "calibration_rows": len(va_a), "threshold_rows": len(va_b),
-                  "threshold_positives": int(y_va[va_b].sum()), "operating_threshold": round(op_thr, 6),
+    # Calibrated model: sigmoid calibration with 5-fold CV on the train split (a 2-parameter map; validation is
+    # too small to fit calibration AND pick a threshold: it has ~75 scams).
+    from sklearn.base import clone
+    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+    cv5 = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
+    # ensemble=False: ONE model refit on all train data + a sigmoid fit on out-of-fold predictions. The default
+    # (ensemble of 5 pipelines) scored every message 5 times: p50 13.2 ms vs ~1 ms (benchmarks/results/archive/sms_train_20261118_200457.json).
+    make_cal = lambda: CalibratedClassifierCV(clone(candidates[best]), method="sigmoid", cv=cv5, ensemble=False)  # noqa: E731
+    # Operating threshold from OUT-OF-FOLD predictions of the same calibrated construction on the whole train split
+    # (~420 scams instead of ~37 in a validation half: a 0.95-recall threshold from 37 positives is decided by
+    # one or two messages and gave FPR 0.16 in the first run, benchmarks/results/archive/sms_train_20261118_195416.json).
+    oof = cross_val_predict(make_cal(), X_tr2, y_tr2, cv=cv5, method="predict_proba")[:, 1]
+    op_thr = threshold_for_recall(y_tr2, oof, a.target_recall)
+    cal = make_cal().fit(X_tr2, y_tr2)
+    p_va_cal, p_te_cal = cal.predict_proba(X_va)[:, 1], cal.predict_proba(X_te)[:, 1]
+    calibrated = {"method": "sigmoid, 5-fold CV on train (ensemble=False)", "threshold_from": "5-fold out-of-fold predictions on train",
+                  "threshold_positives": int(y_tr2.sum()), "operating_threshold": round(op_thr, 6),
+                  "val_at_operating_threshold": detection_metrics(y_va, p_va_cal, op_thr),
                   "test_at_operating_threshold": detection_metrics(y_te, p_te_cal, op_thr),
                   "brier_test_uncalibrated": round(float(np.mean((fitted[best].predict_proba(X_te)[:, 1] - y_te) ** 2)), 5),
-                  "brier_test_calibrated": round(float(np.mean((p_te_cal - y_te) ** 2)), 5)}
+                  "brier_test_calibrated": round(float(np.mean((p_te_cal - y_te) ** 2)), 5),
+                  "size_bytes": model_size_bytes(cal)}
     m = calibrated["test_at_operating_threshold"]
-    print(f"calibrated {best}: threshold={op_thr:.4f} -> test recall={m['recall']} precision={m['precision']} "
-          f"FPR={m['fpr']}  Brier {calibrated['brier_test_uncalibrated']} -> {calibrated['brier_test_calibrated']}")
+    print(f"calibrated {best}: threshold={op_thr:.4f} (from {int(y_tr2.sum())} OOF scams) -> test recall={m['recall']} "
+          f"precision={m['precision']} FPR={m['fpr']}  Brier {calibrated['brier_test_uncalibrated']} -> "
+          f"{calibrated['brier_test_calibrated']}")
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"model": cal, "name": f"sms-{best}-cal", "threshold": float(op_thr), "calibrated": True,
                  "target_recall": a.target_recall, "trained_on": Path(a.uci or a.csv).name}, a.out, compress=3)

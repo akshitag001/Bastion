@@ -1,0 +1,307 @@
+{
+  "task": "url",
+  "dataset": "PhiUSIIL_Phishing_URL_Dataset.csv",
+  "seed": 42,
+  "rows": 200000,
+  "phishing": 100000,
+  "split": {
+    "train": 131516,
+    "val": 22627,
+    "test": 45857,
+    "grouped_by": "registered_domain",
+    "domain_overlap_train_test": 0
+  },
+  "target_recall": 0.95,
+  "models": {
+    "logreg": {
+      "train_seconds": 0.33,
+      "val_roc_auc": 0.7326,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.6085,
+        "precision": 0.6892,
+        "recall": 0.5605,
+        "f1": 0.6182,
+        "roc_auc": 0.6946,
+        "fpr": 0.329,
+        "fnr": 0.4395,
+        "confusion": {
+          "tn": 13370,
+          "fp": 6555,
+          "fn": 11398,
+          "tp": 14534
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.27144405245780945,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.6055,
+        "precision": 0.5929,
+        "recall": 0.9651,
+        "f1": 0.7345,
+        "roc_auc": 0.6946,
+        "fpr": 0.8625,
+        "fnr": 0.0349,
+        "confusion": {
+          "tn": 2739,
+          "fp": 17186,
+          "fn": 904,
+          "tp": 25028
+        }
+      },
+      "size_bytes": 1289,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 0.392,
+        "p50_ms": 0.355,
+        "p95_ms": 0.3952,
+        "p99_ms": 0.5441
+      }
+    },
+    "random_forest": {
+      "train_seconds": 1.29,
+      "val_roc_auc": 0.65,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.5119,
+        "precision": 0.7179,
+        "recall": 0.2254,
+        "f1": 0.343,
+        "roc_auc": 0.6097,
+        "fpr": 0.1152,
+        "fnr": 0.7746,
+        "confusion": {
+          "tn": 17629,
+          "fp": 2296,
+          "fn": 20088,
+          "tp": 5844
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.23955004973344005,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.6168,
+        "precision": 0.5999,
+        "recall": 0.9683,
+        "f1": 0.7408,
+        "roc_auc": 0.6097,
+        "fpr": 0.8407,
+        "fnr": 0.0317,
+        "confusion": {
+          "tn": 3175,
+          "fp": 16750,
+          "fn": 821,
+          "tp": 25111
+        }
+      },
+      "size_bytes": 8267132,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 7.9069,
+        "p50_ms": 7.8219,
+        "p95_ms": 9.1355,
+        "p99_ms": 11.1348
+      }
+    },
+    "hist_gbdt": {
+      "train_seconds": 12.66,
+      "val_roc_auc": 0.6825,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.4994,
+        "precision": 0.703,
+        "recall": 0.1986,
+        "f1": 0.3097,
+        "roc_auc": 0.6239,
+        "fpr": 0.1092,
+        "fnr": 0.8014,
+        "confusion": {
+          "tn": 17750,
+          "fp": 2175,
+          "fn": 20783,
+          "tp": 5149
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.23515571063352328,
+        "n": 45857,
+        "positives": 25932,
+        "accuracy": 0.6141,
+        "precision": 0.5992,
+        "recall": 0.9595,
+        "f1": 0.7377,
+        "roc_auc": 0.6239,
+        "fpr": 0.8354,
+        "fnr": 0.0405,
+        "confusion": {
+          "tn": 3280,
+          "fp": 16645,
+          "fn": 1049,
+          "tp": 24883
+        }
+      },
+      "size_bytes": 455247,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 3.6183,
+        "p50_ms": 3.5598,
+        "p95_ms": 3.8867,
+        "p99_ms": 4.8271
+      }
+    }
+  },
+  "selected": "logreg",
+  "selection": "validation ROC-AUC",
+  "calibration": {
+    "method": "isotonic",
+    "brier_val_half_b": {
+      "raw": 0.20506,
+      "isotonic": 0.19948
+    },
+    "calibration_rows": 10476,
+    "threshold_rows": 12151,
+    "operating_threshold": 0.216401,
+    "test_at_operating_threshold": {
+      "threshold": 0.2164009064435959,
+      "n": 45857,
+      "positives": 25932,
+      "accuracy": 0.5673,
+      "precision": 0.5666,
+      "recall": 0.9988,
+      "f1": 0.723,
+      "roc_auc": 0.6929,
+      "fpr": 0.9942,
+      "fnr": 0.0012,
+      "confusion": {
+        "tn": 116,
+        "fp": 19809,
+        "fn": 32,
+        "tp": 25900
+      }
+    },
+    "brier_test_uncalibrated": 0.21965,
+    "brier_test_calibrated": 0.23307
+  },
+  "end_to_end_test": {
+    "warned_suspicious_or_malicious": {
+      "threshold": 0.5,
+      "n": 45857,
+      "positives": 25932,
+      "accuracy": 0.5679,
+      "precision": 0.5669,
+      "recall": 0.9998,
+      "f1": 0.7235,
+      "roc_auc": 0.7543,
+      "fpr": 0.9942,
+      "fnr": 0.0002,
+      "confusion": {
+        "tn": 116,
+        "fp": 19809,
+        "fn": 6,
+        "tp": 25926
+      }
+    },
+    "malicious_only": {
+      "threshold": 0.5,
+      "n": 45857,
+      "positives": 25932,
+      "accuracy": 0.4956,
+      "precision": 0.9937,
+      "recall": 0.1088,
+      "f1": 0.1962,
+      "roc_auc": 0.554,
+      "fpr": 0.0009,
+      "fnr": 0.8912,
+      "confusion": {
+        "tn": 19907,
+        "fp": 18,
+        "fn": 23110,
+        "tp": 2822
+      }
+    },
+    "verdict_counts": {
+      "SAFE": 122,
+      "SUSPICIOUS": 42895,
+      "MALICIOUS": 2840
+    },
+    "latency_ms": {
+      "p50": 1.4698,
+      "p95": 1.9632,
+      "mean": 1.5464
+    }
+  },
+  "fusion_thresholds": {
+    "suspicious": 35,
+    "malicious": 70,
+    "ml_weight": 0.7
+  },
+  "popular_domain_fp_check": {
+    "source": "top-1m.csv",
+    "url_form": "https://{domain}/",
+    "note": "Tranco popular domains treated as legitimate; a few popular domains do host abuse, so this is an approximate false-positive rate. Ranks 1-2000 = selection slice (used to compare URL views); ranks 2001-12000 = report slice.",
+    "selection_ranks_1_2000": {
+      "n": 2000,
+      "warned_rate": 1.0,
+      "malicious_rate": 0.0115
+    },
+    "report_ranks_2001_12000": {
+      "n": 10000,
+      "warned_rate": 0.9996,
+      "malicious_rate": 0.0083
+    }
+  },
+  "view": "domain",
+  "leak_probe_trivial_features": {
+    "threshold": 0.5,
+    "n": 45857,
+    "positives": 25932,
+    "accuracy": 0.576,
+    "precision": 0.6977,
+    "recall": 0.4414,
+    "f1": 0.5407,
+    "roc_auc": 0.6938,
+    "fpr": 0.2489,
+    "fnr": 0.5586,
+    "confusion": {
+      "tn": 14966,
+      "fp": 4959,
+      "fn": 14485,
+      "tp": 11447
+    }
+  },
+  "leak_probe_full_view_reference": {
+    "threshold": 0.5,
+    "n": 45857,
+    "positives": 25932,
+    "accuracy": 0.8465,
+    "precision": 0.9828,
+    "recall": 0.7416,
+    "f1": 0.8453,
+    "roc_auc": 0.8993,
+    "fpr": 0.0169,
+    "fnr": 0.2584,
+    "confusion": {
+      "tn": 19589,
+      "fp": 336,
+      "fn": 6702,
+      "tp": 19230
+    }
+  },
+  "share_of_urls_with_path": {
+    "benign": 0.0,
+    "phishing": 0.2716
+  },
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "machine": "AMD64",
+    "python": "3.11.9"
+  }
+}

@@ -158,7 +158,22 @@ def host_view(url: str) -> str:
     return f"{u.scheme}://{u.netloc}/"
 
 
-VIEWS = {"full": lambda u: u, "host": host_view}
+def canon_view(url: str) -> str:
+    """Host with the scheme and a leading 'www.' removed (normalised to http://host/). In PhiUSIIL 100 % of benign
+    URLs are https://www.* while only 41 % / 49 % of phishing URLs are www / https, so both act as labels there."""
+    p = parse(url)
+    host = p["host"][4:] if p["host"].startswith("www.") else p["host"]
+    return f"http://{host}/"
+
+
+def domain_view(url: str) -> str:
+    """Registered domain only (docs.google.com -> google.com): benign PhiUSIIL hosts never have real subdomains, so
+    any subdomain looks like phishing to a model. Subdomain tricks (paypal.com.evil.xyz) stay with the rules."""
+    p = parse(url)
+    return f"http://{p['registered_domain'] or p['host']}/"
+
+
+VIEWS = {"full": lambda u: u, "host": host_view, "canon": canon_view, "domain": domain_view}
 
 
 def vector(url: str) -> list[float]:

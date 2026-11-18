@@ -1,0 +1,244 @@
+{
+  "task": "sms",
+  "dataset": "SMSSpamCollection",
+  "seed": 42,
+  "rows_after_dedup": 5137,
+  "scam": 620,
+  "split": {
+    "train": 3492,
+    "val": 617,
+    "test": 1028,
+    "stratified": true
+  },
+  "note": "all models fit on the train split only; validation used for selection, calibration, threshold",
+  "target_recall": 0.95,
+  "models": {
+    "tfidf_logreg": {
+      "train_seconds": 0.49,
+      "val_roc_auc": 0.9917,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9864,
+        "precision": 0.9508,
+        "recall": 0.9355,
+        "f1": 0.9431,
+        "roc_auc": 0.9921,
+        "fpr": 0.0066,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 898,
+          "fp": 6,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.05459180503124669,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9251,
+        "precision": 0.6181,
+        "recall": 0.9919,
+        "f1": 0.7616,
+        "roc_auc": 0.9921,
+        "fpr": 0.0841,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 828,
+          "fp": 76,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 539346,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 1.2944,
+        "p50_ms": 1.0941,
+        "p95_ms": 1.992,
+        "p99_ms": 2.7881
+      }
+    },
+    "tfidf_linearsvm": {
+      "train_seconds": 0.49,
+      "val_roc_auc": 0.9914,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9883,
+        "precision": 0.9667,
+        "recall": 0.9355,
+        "f1": 0.9508,
+        "roc_auc": 0.9923,
+        "fpr": 0.0044,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 900,
+          "fp": 4,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.02588209629134301,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9339,
+        "precision": 0.6474,
+        "recall": 0.9919,
+        "f1": 0.7834,
+        "roc_auc": 0.9923,
+        "fpr": 0.0741,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 837,
+          "fp": 67,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 854990,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 3.1885,
+        "p50_ms": 2.86,
+        "p95_ms": 5.1906,
+        "p99_ms": 8.6849
+      }
+    },
+    "tfidf_complement_nb": {
+      "train_seconds": 0.43,
+      "val_roc_auc": 0.9737,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9835,
+        "precision": 0.935,
+        "recall": 0.9274,
+        "f1": 0.9312,
+        "roc_auc": 0.9846,
+        "fpr": 0.0088,
+        "fnr": 0.0726,
+        "confusion": {
+          "tn": 896,
+          "fp": 8,
+          "fn": 9,
+          "tp": 115
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.00048400807776435704,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.7724,
+        "precision": 0.3446,
+        "recall": 0.9839,
+        "f1": 0.5105,
+        "roc_auc": 0.9846,
+        "fpr": 0.2566,
+        "fnr": 0.0161,
+        "confusion": {
+          "tn": 672,
+          "fp": 232,
+          "fn": 2,
+          "tp": 122
+        }
+      },
+      "size_bytes": 1161580,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 1.7524,
+        "p50_ms": 1.5185,
+        "p95_ms": 2.6241,
+        "p99_ms": 3.8432
+      }
+    }
+  },
+  "selected": "tfidf_logreg",
+  "selection": "validation ROC-AUC",
+  "calibration": {
+    "method": "sigmoid",
+    "calibration_rows": 308,
+    "threshold_rows": 309,
+    "threshold_positives": 37,
+    "operating_threshold": 0.033306,
+    "test_at_operating_threshold": {
+      "threshold": 0.033306155318008054,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.8638,
+      "precision": 0.4695,
+      "recall": 0.9919,
+      "f1": 0.6373,
+      "roc_auc": 0.9921,
+      "fpr": 0.1538,
+      "fnr": 0.0081,
+      "confusion": {
+        "tn": 765,
+        "fp": 139,
+        "fn": 1,
+        "tp": 123
+      }
+    },
+    "brier_test_uncalibrated": 0.00993,
+    "brier_test_calibrated": 0.00991
+  },
+  "end_to_end_test": {
+    "warned_suspicious_or_malicious": {
+      "threshold": 0.5,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.856,
+      "precision": 0.4556,
+      "recall": 0.9919,
+      "f1": 0.6244,
+      "roc_auc": 0.9914,
+      "fpr": 0.1626,
+      "fnr": 0.0081,
+      "confusion": {
+        "tn": 757,
+        "fp": 147,
+        "fn": 1,
+        "tp": 123
+      }
+    },
+    "malicious_only": {
+      "threshold": 0.5,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.9669,
+      "precision": 1.0,
+      "recall": 0.7258,
+      "f1": 0.8411,
+      "roc_auc": 0.8629,
+      "fpr": 0.0,
+      "fnr": 0.2742,
+      "confusion": {
+        "tn": 904,
+        "fp": 0,
+        "fn": 34,
+        "tp": 90
+      }
+    },
+    "verdict_counts": {
+      "SAFE": 758,
+      "SUSPICIOUS": 180,
+      "MALICIOUS": 90
+    },
+    "latency_ms": {
+      "p50": 2.9608,
+      "p95": 4.3894,
+      "mean": 2.9799
+    }
+  },
+  "end_to_end_url_model": "url-hist_gbdt",
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "machine": "AMD64",
+    "python": "3.11.9"
+  }
+}

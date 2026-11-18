@@ -1,0 +1,262 @@
+{
+  "task": "sms",
+  "dataset": "SMSSpamCollection",
+  "seed": 42,
+  "rows_after_dedup": 5137,
+  "scam": 620,
+  "split": {
+    "train": 3492,
+    "val": 617,
+    "test": 1028,
+    "stratified": true
+  },
+  "note": "all models fit on the train split only; validation used for selection, calibration, threshold",
+  "target_recall": 0.95,
+  "models": {
+    "tfidf_logreg": {
+      "train_seconds": 0.4,
+      "val_roc_auc": 0.9917,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9864,
+        "precision": 0.9508,
+        "recall": 0.9355,
+        "f1": 0.9431,
+        "roc_auc": 0.9921,
+        "fpr": 0.0066,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 898,
+          "fp": 6,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.05459180503124669,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9251,
+        "precision": 0.6181,
+        "recall": 0.9919,
+        "f1": 0.7616,
+        "roc_auc": 0.9921,
+        "fpr": 0.0841,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 828,
+          "fp": 76,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 539346,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 1.1564,
+        "p50_ms": 1.0147,
+        "p95_ms": 1.3179,
+        "p99_ms": 1.5503
+      }
+    },
+    "tfidf_linearsvm": {
+      "train_seconds": 0.37,
+      "val_roc_auc": 0.9914,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9883,
+        "precision": 0.9667,
+        "recall": 0.9355,
+        "f1": 0.9508,
+        "roc_auc": 0.9923,
+        "fpr": 0.0044,
+        "fnr": 0.0645,
+        "confusion": {
+          "tn": 900,
+          "fp": 4,
+          "fn": 8,
+          "tp": 116
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.02588215742595623,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9339,
+        "precision": 0.6474,
+        "recall": 0.9919,
+        "f1": 0.7834,
+        "roc_auc": 0.9923,
+        "fpr": 0.0741,
+        "fnr": 0.0081,
+        "confusion": {
+          "tn": 837,
+          "fp": 67,
+          "fn": 1,
+          "tp": 123
+        }
+      },
+      "size_bytes": 854232,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 2.3296,
+        "p50_ms": 2.2381,
+        "p95_ms": 2.9988,
+        "p99_ms": 3.7251
+      }
+    },
+    "tfidf_complement_nb": {
+      "train_seconds": 0.29,
+      "val_roc_auc": 0.9737,
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.9835,
+        "precision": 0.935,
+        "recall": 0.9274,
+        "f1": 0.9312,
+        "roc_auc": 0.9846,
+        "fpr": 0.0088,
+        "fnr": 0.0726,
+        "confusion": {
+          "tn": 896,
+          "fp": 8,
+          "fn": 9,
+          "tp": 115
+        }
+      },
+      "test_at_recall_threshold": {
+        "threshold": 0.00048400807776435704,
+        "n": 1028,
+        "positives": 124,
+        "accuracy": 0.7724,
+        "precision": 0.3446,
+        "recall": 0.9839,
+        "f1": 0.5105,
+        "roc_auc": 0.9846,
+        "fpr": 0.2566,
+        "fnr": 0.0161,
+        "confusion": {
+          "tn": 672,
+          "fp": 232,
+          "fn": 2,
+          "tp": 122
+        }
+      },
+      "size_bytes": 1161580,
+      "latency_single": {
+        "runs": 300,
+        "mean_ms": 1.1955,
+        "p50_ms": 1.1671,
+        "p95_ms": 1.4415,
+        "p99_ms": 1.6159
+      }
+    }
+  },
+  "selected": "tfidf_logreg",
+  "selection": "validation ROC-AUC",
+  "calibration": {
+    "method": "sigmoid, 5-fold CV on train",
+    "threshold_from": "5-fold out-of-fold predictions on train",
+    "threshold_positives": 422,
+    "operating_threshold": 0.353342,
+    "val_at_operating_threshold": {
+      "threshold": 0.3533418435364134,
+      "n": 617,
+      "positives": 74,
+      "accuracy": 0.9854,
+      "precision": 0.971,
+      "recall": 0.9054,
+      "f1": 0.9371,
+      "roc_auc": 0.9915,
+      "fpr": 0.0037,
+      "fnr": 0.0946,
+      "confusion": {
+        "tn": 541,
+        "fp": 2,
+        "fn": 7,
+        "tp": 67
+      }
+    },
+    "test_at_operating_threshold": {
+      "threshold": 0.3533418435364134,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.9864,
+      "precision": 0.9508,
+      "recall": 0.9355,
+      "f1": 0.9431,
+      "roc_auc": 0.992,
+      "fpr": 0.0066,
+      "fnr": 0.0645,
+      "confusion": {
+        "tn": 898,
+        "fp": 6,
+        "fn": 8,
+        "tp": 116
+      }
+    },
+    "brier_test_uncalibrated": 0.00993,
+    "brier_test_calibrated": 0.00955,
+    "size_bytes": 2294588
+  },
+  "end_to_end_test": {
+    "warned_suspicious_or_malicious": {
+      "threshold": 0.5,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.9835,
+      "precision": 0.9213,
+      "recall": 0.9435,
+      "f1": 0.9323,
+      "roc_auc": 0.992,
+      "fpr": 0.0111,
+      "fnr": 0.0565,
+      "confusion": {
+        "tn": 894,
+        "fp": 10,
+        "fn": 7,
+        "tp": 117
+      }
+    },
+    "malicious_only": {
+      "threshold": 0.5,
+      "n": 1028,
+      "positives": 124,
+      "accuracy": 0.966,
+      "precision": 1.0,
+      "recall": 0.7177,
+      "f1": 0.8357,
+      "roc_auc": 0.8589,
+      "fpr": 0.0,
+      "fnr": 0.2823,
+      "confusion": {
+        "tn": 904,
+        "fp": 0,
+        "fn": 35,
+        "tp": 89
+      }
+    },
+    "verdict_counts": {
+      "SAFE": 901,
+      "SUSPICIOUS": 38,
+      "MALICIOUS": 89
+    },
+    "latency_ms": {
+      "p50": 13.1588,
+      "p95": 17.2407,
+      "mean": 13.4816
+    }
+  },
+  "end_to_end_url_model": "url-hist_gbdt",
+  "machine": {
+    "platform": "Windows-10-10.0.22631-SP0",
+    "machine": "AMD64",
+    "python": "3.11.9"
+  }
+}
