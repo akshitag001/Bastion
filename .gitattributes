@@ -3,3 +3,5 @@
 *.jpg binary
 *.pte binary
 *.joblib binary
+*.glb binary
+*.woff2 binary

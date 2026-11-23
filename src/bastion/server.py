@@ -283,6 +283,14 @@ def create_app(use_llm: bool = True, history: History | None = None, preload_llm
 
     # ------------------------------------------------------------------ frontend
     if WEB.is_dir():
+        @app.middleware("http")
+        async def revalidate_frontend(request: Request, call_next):
+            # browsers must re-check UI files (cheap 304 via ETag) so an updated UI is never hidden by a stale cache
+            resp = await call_next(request)
+            if request.url.path == "/" or request.url.path.startswith("/static/"):
+                resp.headers.setdefault("Cache-Control", "no-cache")
+            return resp
+
         app.mount("/static", StaticFiles(directory=WEB), name="static")
 
         @app.get("/")

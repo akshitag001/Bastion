@@ -158,3 +158,10 @@ def test_ui_smoke_page_and_assets_served_locally(client):
         assert not re.search(r"(src|href)\s*=\s*[\"']https?://", body), asset
         assert not re.search(r"(fetch|import)\s*\(?\s*[\"']https?://", body), asset
         assert "from \"http" not in body and "cdn" not in body.lower(), asset
+    # 3D board: model + GLTFLoader are vendored, and the loader imports only local modules (no bare 'three', no URLs)
+    glb = client.get("/static/vendor/models/pi-board.glb")
+    assert glb.status_code == 200 and glb.content[:4] == b"glTF"
+    for asset in ("/static/vendor/addons/GLTFLoader.js", "/static/vendor/addons/BufferGeometryUtils.js"):
+        body = client.get(asset).text
+        imports = re.findall(r"^\s*(?:import\b[^;]*?\bfrom\s*|\}\s*from\s*)['\"]([^'\"]+)['\"]", body, re.M)
+        assert imports and all(i.startswith(("/static/vendor/", "./")) for i in imports), (asset, imports)

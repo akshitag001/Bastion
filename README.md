@@ -49,6 +49,16 @@ Paste a link or an SMS. In milliseconds Bastion gives you:
 |---|---|
 | <img src="docs/screenshots/scan-safe-url.png" alt="IRCTC deep link rated Safe" width="420"> | <img src="docs/screenshots/device-twin.png" alt="3D Pi 5 twin board with live CPU, memory, pipeline stage, model state and network status" width="420"> |
 
+| 🖱️ Hover any part: what it does for Bastion | 📱 Explore in 3D on a phone |
+|---|---|
+| <img src="docs/screenshots/board-hover.png" alt="Hovering the Arm SoC on the 3D board shows a label explaining that it runs the detectors and Llama" width="420"> | <img src="docs/screenshots/phone-explore.png" alt="Full-screen Explore in 3D view on a phone with part chips" width="200"> |
+
+**Explore in 3D:** a full-screen board you can rotate, tilt and zoom (pinch, scroll or keyboard). Click a part or a chip to fly to it:
+
+<img src="docs/screenshots/explore-3d.png" alt="Explore in 3D: camera zoomed onto the Arm SoC with its label, part chips along the bottom" width="820">
+
+<sub>The 3D model is a Raspberry Pi 4B assembly used as a stand-in for the Pi 5. The part labels describe the Pi 5 (see <code>src/bastion/web/vendor/README.md</code>).</sub>
+
 | 📊 Honest benchmarks | 🕘 Local history |
 |---|---|
 | <img src="docs/screenshots/bench.png" alt="Benchmarks page with end-to-end metrics" width="420"> | <img src="docs/screenshots/history.png" alt="Scan history table" width="420"> |

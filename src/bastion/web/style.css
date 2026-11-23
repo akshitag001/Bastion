@@ -98,6 +98,8 @@ main { max-width: 1160px; margin: 0 auto; padding: 0 24px 40px; }
   background: radial-gradient(closest-side, rgba(109, 106, 232, .30), rgba(109, 106, 232, .10) 60%, transparent 100%); filter: blur(6px); }
 .board-host { position: relative; width: 100%; aspect-ratio: 4 / 3; }
 .board-host canvas, .board-host img { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* fade the 3D scene into the page (no hard canvas edge around the halo) */
+.board-host canvas, .board-host img { -webkit-mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 70%, transparent 100%); mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, #000 70%, transparent 100%); }
 .board-host .fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 20px; }
 .device-card { position: relative; z-index: 2; margin-top: -18px; width: min(100%, 470px); background: var(--paper); border: 1px solid var(--line);
   border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); display: grid; gap: 6px; }
@@ -251,3 +253,37 @@ ul.plain { margin: 0; padding-left: 18px; font-size: .9rem; } ul.plain li { marg
   .barchart .br { grid-template-columns: 110px 1fr 64px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Device twin: hover / tap label for a board part */
+.twin-tip { position: absolute; z-index: 5; width: 250px; padding: 10px 12px; border-radius: 12px; pointer-events: none;
+  background: rgba(255,255,255,.94); border: 1px solid var(--line, #e4e2f3); box-shadow: 0 10px 30px rgba(40,36,110,.16);
+  backdrop-filter: blur(8px); transform: translate(-50%, calc(-100% - 16px)); opacity: 0; transition: opacity .15s ease; }
+.twin-tip.below { transform: translate(-50%, 18px); }
+.twin-tip.on { opacity: 1; }
+.twin-tip small { display: block; font: 600 10px/1.2 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--cc, #6d6ae8); }
+.twin-tip b { display: block; margin: 3px 0 4px; font-size: 15px; color: var(--ink, #15142b); }
+.twin-tip span { display: block; font-size: 12px; line-height: 1.45; color: var(--muted, #5d5b78); }
+
+/* "Explore in 3D": the same renderer moved into a full-screen view with zoom, tilt and part focus */
+.explore-open { position: relative; z-index: 2; display: flex; margin: -6px auto 14px; gap: 6px; }
+.twin-stage .explore-open { margin: 10px auto 0; }
+body.exploring { overflow: hidden; }
+.explore { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto 1fr auto;
+  background: radial-gradient(60% 55% at 50% 50%, #e7e5fd 0%, var(--bg) 70%); }
+.explore[hidden] { display: none; }
+.explore-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 16px clamp(16px, 4vw, 40px); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.7); backdrop-filter: blur(8px); }
+.explore-title { margin: 6px 0 0; font: 600 1.25rem var(--head); color: var(--ink); }
+.explore-hint { margin: 0; flex: 1 1 260px; text-align: center; }
+.explore-actions { display: flex; gap: 8px; }
+.explore-host { position: relative; min-height: 0; outline: none; cursor: grab; }
+.explore-host canvas, .explore-host img { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.explore-parts { display: flex; gap: 8px; overflow-x: auto; padding: 12px clamp(16px, 4vw, 40px) 18px;
+  border-top: 1px solid var(--line); background: rgba(255,255,255,.7); backdrop-filter: blur(8px); }
+.explore-parts button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper); font: 500 .82rem var(--body); color: var(--ink2); cursor: pointer; }
+.explore-parts button i { width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--lav)); }
+.explore-parts button:hover { border-color: #cfd2e2; }
+.explore-parts button[aria-pressed="true"] { border-color: var(--cc, var(--lav)); color: var(--ink); box-shadow: 0 0 0 3px var(--lav-soft); }
+@media (max-width: 640px) { .explore-hint { display: none; } }

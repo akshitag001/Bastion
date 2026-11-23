@@ -66,6 +66,7 @@
           <span class="eyebrow-pill floating">Pi 5 twin · drag to turn</span>
           <div class="halo" aria-hidden="true"></div>
           <div id="heroCanvas" class="board-host" role="img" aria-label="3D model of the Bastion Pi 5 twin board"></div>
+          <button type="button" class="btn-ghost sm explore-open" data-explore>Explore in 3D <span aria-hidden="true">&#x2922;</span></button>
           <div class="device-card">
             <div class="device-row">
               <span class="live"><i class="dot red"></i>This device</span>
@@ -167,6 +168,7 @@
         <div class="twin-stage">
           <div class="halo" aria-hidden="true"></div>
           <div id="twinCanvas" class="board-host big" role="img" aria-label="3D model of the Pi 5 twin board showing the current pipeline stage"></div>
+          <button type="button" class="btn-ghost sm explore-open" data-explore>Explore in 3D <span aria-hidden="true">&#x2922;</span></button>
         </div>
         <div class="twin-side">
           <div class="rcard"><div class="rhead"><span class="eyebrow">#pipeline</span></div><ol id="stages" class="stages"></ol></div>
@@ -223,6 +225,22 @@
     <span>Bastion runs fully offline. Verdicts come from the detector; the AI only explains.</span>
     <span id="footEnv" class="mono"></span>
   </footer>
+
+  <div id="explore" class="explore" hidden role="dialog" aria-modal="true" aria-labelledby="exploreTitle">
+    <div class="explore-top">
+      <div>
+        <span class="eyebrow-pill">Pi 5 twin &middot; explore</span>
+        <h2 id="exploreTitle" class="explore-title">Inspect the board</h2>
+      </div>
+      <p class="explore-hint muted small">Drag to rotate and tilt &middot; scroll or pinch to zoom &middot; click a part &middot; arrows / + / &minus; &middot; Esc to close</p>
+      <div class="explore-actions">
+        <button type="button" id="exploreReset" class="btn-ghost sm">Reset view</button>
+        <button type="button" id="exploreClose" class="btn-ghost sm" aria-label="Close the 3D view">&#x2715;</button>
+      </div>
+    </div>
+    <div id="exploreCanvas" class="explore-host" tabindex="0" aria-label="Interactive 3D board"></div>
+    <div id="exploreParts" class="explore-parts" aria-label="Board parts"></div>
+  </div>
 
   <script src="/static/app.js"></script>
   <script type="module" src="/static/twin.js"></script>

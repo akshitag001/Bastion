@@ -9,6 +9,15 @@
       35.25 tok/s, 1/5 guard fallback (prompt injection). The 2024 community `.pte` is incompatible with the 1.6.0 runtime.
 - [x] `docs/REPORT.md` written; README/notes updated; screenshots show a real streamed Llama explanation.
 - [x] Repo prepared for GitHub: local agent notes and the master prompt excluded and removed from history.
+- [x] **Device twin board**: real-geometry board model (`web/vendor/models/pi-board.glb`, a Pi 4B assembly supplied by
+      the team, used as a Pi 5 stand-in) loaded with a vendored GLTFLoader; hover/tap labels per part (name + what
+      Bastion uses it for, Pi 5 differences noted); SoC glow / trace pulse / verdict LED driven by the live stage;
+      halo + orbit styling. UI files served with `Cache-Control: no-cache` so updates are never hidden by a stale cache.
+      Test extended: model + loader served locally, loader imports only local modules. 53/53 pass.
+      **Explore in 3D** button (hero + Device page): full-screen view with drag rotate/tilt, wheel/pinch zoom (capped,
+      camera kept above the parts), click a part or a chip to fly to it with its label, Reset, Esc/arrows/+/- keys.
+- [x] README screenshots retaken from the running app with the new board (home, scan, twin, bench, history, phone),
+      plus new shots: board hover label, Explore in 3D (desktop + phone).
 - [ ] Llama inside the arm64 twin (Docker Desktop engine down today) and on a real Pi 5.
 - [ ] Demo video.
 
