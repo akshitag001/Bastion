@@ -18,6 +18,8 @@
       camera kept above the parts), click a part or a chip to fly to it with its label, Reset, Esc/arrows/+/- keys.
 - [x] README screenshots retaken from the running app with the new board (home, scan, twin, bench, history, phone),
       plus new shots: board hover label, Explore in 3D (desktop + phone).
+- [x] Final Project Report (PDF, 12 pages): `docs/Bastion_Final_Project_Report.pdf`, built from the result JSONs;
+      Phase 2 targets listed separately from measured Phase 1 results. Linked from the README.
 - [ ] Llama inside the arm64 twin (Docker Desktop engine down today) and on a real Pi 5.
 - [ ] Demo video.
 

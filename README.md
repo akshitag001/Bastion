@@ -13,8 +13,10 @@ No cloud. No telemetry. Nothing leaves the device.
 ![Tests](https://img.shields.io/badge/tests-53%20passing%20on%20x86%20%2B%20aarch64-3fb950)
 ![Python](https://img.shields.io/badge/python-3.11-3776ab)
 
-*Bharat AI-SoC Challenge 2026-27 (Arm) · PS3: On-Device Threat, Phishing & Scam Detection*
+*Bharat AI-SoC Challenge 2026-27 (Arm) · PS3: On-Device Threat, Phishing & Scam Detection · Team Citadel*
 *(Not related to Microsoft's "Azure Bastion".)*
+
+📄 **[Final Project Report (PDF)](docs/Bastion_Final_Project_Report.pdf)**: methodology, results, hardware utilisation, optimisation techniques and Phase 2 targets.
 
 <img src="docs/screenshots/home.png" alt="Bastion home: headline 'Scams, stopped at the edge', live stat cards and the 3D Pi 5 twin board" width="900">
 
@@ -229,7 +231,7 @@ src/bastion/          features · detectors · fusion · explain (Llama, guard) 
 training/             trainers: validation-only selection, calibration, operating points, end-to-end eval
 benchmarks/results/   every number in this README (JSON + logs); archive/ = superseded runs cited in docs
 twin/                 arm64 Dockerfile, Pi 5 profile, twinctl, export container, nginx
-docs/                 REPORT · DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
+docs/                 Final Project Report (PDF) · REPORT · DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
 tests/                53 tests: features, detectors, guard, injection, Llama backends, API, UI, training
 ```
 
