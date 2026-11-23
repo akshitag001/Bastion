@@ -121,11 +121,14 @@ class _FakeProgram:
 
 
 class _FakeTok:
-    def encode(self, text, bos, eos):
+    """Mimics pytorch_tokenizers' Python TiktokenTokenizer (what Llama 3.2's tokenizer.model loads as)."""
+
+    def encode(self, text, *, bos, eos, allowed_special=None):
+        assert allowed_special == "all"            # chat-template markers must become special tokens
         return [BOS, 1, 2, 3]
 
-    def decode(self, tid):
-        return f"w{tid} "
+    def decode(self, ids):
+        return "".join(f"w{i} " for i in ids)
 
 
 @pytest.fixture

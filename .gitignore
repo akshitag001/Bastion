@@ -13,3 +13,9 @@ models/llama/
 # trained detector models are small; commit them once trained on REAL data if you want
 # models/*.joblib
 ps3-edge-guard-v0.1/
+
+
+# hydra run logs from the ExecuTorch export (contain local paths)
+outputs/
+# export tooling venv + downloaded weights
+third_party/

@@ -1,0 +1,121 @@
+{
+  "environment": "x86-native",
+  "environment_detail": {
+    "environment": "x86-native",
+    "reason": "machine amd64",
+    "timing_note": "x86 development machine: not Arm, not representative of a Raspberry Pi 5.",
+    "machine": "AMD64",
+    "system": "Windows",
+    "python": "3.11.9",
+    "cpu_implementer": null,
+    "cpu_part": null,
+    "cpu_limit": 32.0,
+    "memory_limit_bytes": 68393086976,
+    "host_arch_hint": null,
+    "twin_profile": null
+  },
+  "machine": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "arch": "AMD64",
+    "cpu_count": 32,
+    "ram_total_mb": 65225,
+    "python": "3.11.9",
+    "cpu_temp_c_start": null,
+    "cpu_temp_c_end": null
+  },
+  "models": {
+    "url": "url-hist_gbdt",
+    "sms": "sms-tfidf_logreg-cal"
+  },
+  "model_files_bytes": {
+    "sms_model.joblib": 539736,
+    "url_model.joblib": 457893
+  },
+  "load_ms": 1228.1,
+  "rss_mb": {
+    "before_load": 22.4,
+    "after_load": 169.9,
+    "peak_after_bench": 1266.0
+  },
+  "note": "inputs are handwritten demo samples; latency only, not accuracy",
+  "url_detect": {
+    "runs": 300,
+    "mean_ms": 1.3516,
+    "p50_ms": 1.3191,
+    "p95_ms": 1.5781,
+    "p99_ms": 1.952,
+    "throughput_per_s": 739.9,
+    "cpu_percent_during": 96.0
+  },
+  "sms_detect": {
+    "runs": 300,
+    "mean_ms": 2.2421,
+    "p50_ms": 1.8512,
+    "p95_ms": 3.3959,
+    "p99_ms": 3.6341,
+    "throughput_per_s": 446.0,
+    "cpu_percent_during": 97.7
+  },
+  "llm": {
+    "available": true,
+    "backend": "runtime",
+    "model": "llama3_2_1b_8da4w.pte",
+    "load_ms_once": 3053.7,
+    "explain_wall_ms": {
+      "runs": 5,
+      "mean_ms": 4311.84,
+      "p50_ms": 4292.6,
+      "p95_ms": 4964.9,
+      "p99_ms": 4964.9,
+      "throughput_per_s": 0.2
+    },
+    "prefill_ms_mean": 2361.3,
+    "decode_tokens_per_s_mean": 35.25,
+    "per_call_stats": [
+      {
+        "prompt_tokens": 405,
+        "generated_tokens": 86,
+        "prefill_ms": 2415.3,
+        "decode_ms": 2549.1,
+        "decode_tokens_per_s": 33.74
+      },
+      {
+        "prompt_tokens": 389,
+        "generated_tokens": 70,
+        "prefill_ms": 2524.9,
+        "decode_ms": 1846.0,
+        "decode_tokens_per_s": 37.92
+      },
+      {
+        "prompt_tokens": 377,
+        "generated_tokens": 60,
+        "prefill_ms": 2298.9,
+        "decode_ms": 1735.4,
+        "decode_tokens_per_s": 34.57
+      },
+      {
+        "prompt_tokens": 389,
+        "generated_tokens": 73,
+        "prefill_ms": 2238.6,
+        "decode_ms": 2053.3,
+        "decode_tokens_per_s": 35.55
+      },
+      {
+        "prompt_tokens": 405,
+        "generated_tokens": 54,
+        "prefill_ms": 2328.7,
+        "decode_ms": 1565.8,
+        "decode_tokens_per_s": 34.49
+      }
+    ],
+    "explainer_used": [
+      "llama-executorch",
+      "llama-executorch",
+      "llama-executorch",
+      "llama-executorch",
+      "template"
+    ],
+    "fallbacks": 1,
+    "note": "model loaded once and kept resident; wall time = prefill + decode per explanation"
+  }
+}

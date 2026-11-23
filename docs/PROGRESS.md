@@ -1,5 +1,17 @@
 # Progress
 
+## Session 3 (23 Nov 2026, submission day)
+- [x] **UI redesign**: light editorial dashboard (Space Grotesk / Inter / JetBrains Mono bundled locally), hero with live
+      stats from the result JSONs, 3D Pi 5 board in the hero, presets, recent scans; explanation badge reflects reality.
+- [x] **Llama 3.2 1B on ExecuTorch 1.6.0 working**: own export (`twin/export/export_local.py`, weights from the
+      Llama-3.2-licensed unsloth redistribution because Meta's gated repo approval was pending); runtime backend fixed
+      (LLM kernel registration, Python tiktoken API, incremental decoding). x86-native: load 3.05 s, explanation p50 4.29 s,
+      35.25 tok/s, 1/5 guard fallback (prompt injection). The 2024 community `.pte` is incompatible with the 1.6.0 runtime.
+- [x] `docs/REPORT.md` written; README/notes updated; screenshots show a real streamed Llama explanation.
+- [x] Repo prepared for GitHub: local agent notes and the master prompt excluded and removed from history.
+- [ ] Llama inside the arm64 twin (Docker Desktop engine down today) and on a real Pi 5.
+- [ ] Demo video.
+
 ## Sessions 1-2 (18-19 Nov 2026)
 
 ### Done

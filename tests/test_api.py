@@ -147,7 +147,9 @@ def test_ui_smoke_page_and_assets_served_locally(client):
     import re
     html = client.get("/").text
     assert "<title>Bastion</title>" in html
-    for asset in ("/static/style.css", "/static/app.js", "/static/twin.js", "/static/vendor/three.module.min.js"):
+    for asset in ("/static/style.css", "/static/app.js", "/static/twin.js", "/static/vendor/three.module.min.js",
+                  "/static/vendor/fonts/space-grotesk.woff2", "/static/vendor/fonts/inter.woff2",
+                  "/static/vendor/fonts/jetbrains-mono.woff2"):
         r = client.get(asset)
         assert r.status_code == 200 and len(r.content) > 500, asset
     # offline rule: no external URLs in any of our frontend files (vendored three.js excluded: it is the library itself)

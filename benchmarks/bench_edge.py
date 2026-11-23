@@ -93,15 +93,24 @@ def main():
             out["llm"] = {"available": False, "reason": why}
             print(f"LLM not available: {why}")
         else:
-            walls, sources = [], []
+            backend = eg.llm.backend()
+            load_ms = eg.llm.load() if hasattr(eg.llm, "load") and backend in ("python", "runtime") else None
+            walls, sources, stats = [], [], []
             for i in range(a.llm_runs):
                 r = eg.scan_sms(sms[(i + 2) % len(sms)])
                 walls.append(r.timings_ms.get("explain", 0))
                 sources.append(r.explainer)
-            out["llm"] = {"available": True, "explain_wall_ms": summarize(walls),
-                          "explainer_used": sources, "fallbacks": eg.stats["llm_fallbacks"],
-                          "note": "wall time includes runner process start + model load per call "
-                                  "(v1 subprocess design); see docs for a persistent-runner upgrade"}
+                stats.append(r.timings_ms.get("llm_stats", {}))
+            dec = [s["decode_tokens_per_s"] for s in stats if s.get("decode_tokens_per_s")]
+            pre = [s["prefill_ms"] for s in stats if s.get("prefill_ms")]
+            out["llm"] = {"available": True, "backend": backend, "model": Path(eg.llm.cfg.model_path).name,
+                          "load_ms_once": load_ms, "explain_wall_ms": summarize(walls),
+                          "prefill_ms_mean": round(statistics.mean(pre), 1) if pre else None,
+                          "decode_tokens_per_s_mean": round(statistics.mean(dec), 2) if dec else None,
+                          "per_call_stats": stats, "explainer_used": sources, "fallbacks": eg.stats["llm_fallbacks"],
+                          "note": ("model loaded once and kept resident; wall time = prefill + decode per explanation"
+                                   if backend in ("python", "runtime") else
+                                   "subprocess backend: wall time includes runner start + model load per call")}
             print(f"llm: {out['llm']}")
 
     out["rss_mb"]["peak_after_bench"] = round(proc.memory_info().rss / 2**20, 1)

@@ -38,11 +38,23 @@ def _env(name: str, default: str) -> str:
     return os.environ.get(f"BASTION_LLAMA_{name}", default)
 
 
+# Our own export (twin/export/llama3_2_1b_8da4w.yaml) is preferred; the official ExecuTorch-community pre-export
+# (Llama-3.2-1B-Instruct-SpinQuant_INT4_EO8, linked from the ExecuTorch v1.6.0 llama README) is the fallback.
+PTE_CANDIDATES = ("llama3_2_1b_8da4w.pte", "llama3_2_1b_spinquant.pte")
+
+
+def _default_pte() -> str:
+    for name in PTE_CANDIDATES:
+        if (_LLAMA / name).is_file():
+            return str(_LLAMA / name)
+    return str(_LLAMA / PTE_CANDIDATES[0])
+
+
 @dataclass
 class LlamaConfig:
     backend: str = field(default_factory=lambda: _env("BACKEND", "auto"))
     runner: str = field(default_factory=lambda: _env("RUNNER", str(_LLAMA / "llama_main")))
-    model_path: str = field(default_factory=lambda: _env("PTE", str(_LLAMA / "llama3_2_1b_8da4w.pte")))
+    model_path: str = field(default_factory=lambda: _env("PTE", _default_pte()))
     tokenizer_path: str = field(default_factory=lambda: _env("TOKENIZER", str(_LLAMA / "tokenizer.model")))
     seq_len: int = field(default_factory=lambda: int(_env("SEQ_LEN", "768")))       # must be <= export max_seq_length
     max_new_tokens: int = field(default_factory=lambda: int(_env("MAX_NEW_TOKENS", "160")))
@@ -100,6 +112,15 @@ class RuntimeLLM:
             portable_lib._unsafe_reset_threadpool(threads)
         except Exception:
             pass
+        # Register the LLM kernels exported Llama programs use (custom_sdpa, update_cache, fast_hadamard_transform for
+        # SpinQuant, quantized embedding_byte). Without these, load_method("forward") fails with "Missing operator".
+        # Same imports as ExecuTorch's own Python Llama runner. VERIFIED 23 Nov 2026 with executorch 1.6.0 wheels.
+        import importlib
+        for mod in ("executorch.extension.llm.custom_ops.custom_ops", "executorch.kernels.quantized"):
+            try:
+                importlib.import_module(mod)
+            except Exception:
+                pass
         self.torch = torch
         self.program = Runtime.get().load_program(model_path)
         self.forward = self.program.load_method("forward")
@@ -121,6 +142,22 @@ class RuntimeLLM:
         self.bos_id = int(const("get_bos_id", 128000))
         self.dynamic = bool(const("enable_dynamic_shape", True))
 
+    def _encode(self, text: str) -> list[int]:
+        """pytorch_tokenizers returns either the C++ Tiktoken (encode(text, bos, eos)) or the Python
+        TiktokenTokenizer (encode(text, *, bos, eos, allowed_special)). allowed_special='all' turns the chat
+        template's <|...|> markers into special tokens; this is safe because prompts.sanitize() strips every
+        <|...|> sequence from the untrusted scanned text before it is placed in the prompt."""
+        try:
+            return list(self.tok.encode(text, bos=False, eos=False, allowed_special="all"))
+        except TypeError:
+            return list(self.tok.encode(text, 0, 0))
+
+    def _decode(self, ids: list[int]) -> str:
+        try:
+            return self.tok.decode(ids)
+        except TypeError:                                   # C++ tokenizer decodes one token at a time
+            return "".join(self.tok.decode(i) for i in ids)
+
     def _step(self, ids: list[int], pos: int):
         t = self.torch
         out = self.forward.execute([t.tensor([ids], dtype=t.long), t.tensor([pos], dtype=t.long)])[0]
@@ -129,7 +166,7 @@ class RuntimeLLM:
     def generate(self, prompt: str, max_new_tokens: int, seq_len: int,
                  on_token: Callable[[str], None] | None) -> tuple[str, dict]:
         t0 = time.perf_counter()
-        ids = self.tok.encode(prompt, 0, 0)                 # prompt already carries <|begin_of_text|>
+        ids = self._encode(prompt)                          # prompt already carries <|begin_of_text|>
         if not ids or ids[0] != self.bos_id:
             ids = [self.bos_id] + ids
         limit = min(seq_len, self.max_seq_len)
@@ -141,18 +178,21 @@ class RuntimeLLM:
             for i, tid in enumerate(ids):
                 logits = self._step([tid], i)
         t_first = time.perf_counter()
-        pos, pieces, n_gen = len(ids), [], 0
+        pos, gen, emitted, n_gen = len(ids), [], "", 0
         while n_gen < max_new_tokens and pos < limit:
             nxt = int(self.torch.argmax(logits).item())     # temperature 0: greedy
             if nxt in self.eos_ids:
                 break
-            piece = self.tok.decode(nxt)
-            pieces.append(piece)
+            gen.append(nxt)
             n_gen += 1
-            if on_token:
-                on_token(piece)
+            text = self._decode(gen)                        # incremental: multi-byte chars can span tokens
+            if not text.endswith("�") and len(text) > len(emitted):
+                piece, emitted = text[len(emitted):], text
+                if on_token:
+                    on_token(piece)
             logits = self._step([nxt], pos)
             pos += 1
+        pieces = [self._decode(gen)] if gen else []
         t_end = time.perf_counter()
         decode_s = max(t_end - t_first, 1e-9)
         return "".join(pieces), {

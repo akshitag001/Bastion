@@ -4,159 +4,225 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bastion</title>
-  <meta name="description" content="Bastion (PS3 edge AI scam guard): offline URL and SMS scam detection with on-device Llama explanations.">
+  <meta name="description" content="Bastion (PS3 edge AI scam guard): offline SMS and link scam detection on an Arm board, explained by Llama 3.2 on ExecuTorch.">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
+
   <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span><b>Bastion</b><small>offline AI guard on your edge device</small></span>
+    <a class="brand" href="#/scan" aria-label="Bastion home">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+        <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f08c00"/><stop offset="1" stop-color="#d9381e"/></linearGradient></defs>
+        <path d="M16 2.5 5 6.6v8.1c0 7 4.7 12.4 11 14.8 6.3-2.4 11-7.8 11-14.8V6.6L16 2.5Z" fill="none" stroke="#1d2340" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M10.5 16.2l3.8 3.8 7.4-8" fill="none" stroke="url(#bg1)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark">BASTION</span>
+      <span class="brand-sub">Edge scam<br>guard</span>
+    </a>
+
+    <form id="topScan" class="searchpill" role="search" autocomplete="off">
+      <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <label for="topInput" class="sr">Paste a link or an SMS to scan</label>
+      <input id="topInput" placeholder="Paste a link or SMS, e.g. sbi-kyc-update.xyz" maxlength="2048">
+      <button type="submit">Scan</button>
+    </form>
+
+    <div class="chips-top">
+      <span id="envBadge" class="chip" title="Runtime environment">…</span>
+      <span id="netBadge" class="chip" title="Network status">…</span>
     </div>
+
     <nav aria-label="Pages">
       <a href="#/scan" data-page="scan">Scan</a>
       <a href="#/history" data-page="history">History</a>
-      <a href="#/twin" data-page="twin">Device Twin</a>
+      <a href="#/twin" data-page="twin">Device</a>
       <a href="#/bench" data-page="bench">Benchmarks</a>
-      <a href="#/about" data-page="about">About</a>
+      <a href="#/about" data-page="about">Methodology</a>
     </nav>
-    <div class="badges">
-      <span id="envBadge" class="badge" title="Runtime environment">…</span>
-      <span id="netBadge" class="badge" title="Network status">…</span>
-    </div>
   </header>
 
   <main id="main" tabindex="-1">
-    <!-- SCAN -->
-    <section id="page-scan" class="page" aria-labelledby="scanTitle">
-      <h1 id="scanTitle" class="sr">Scan a link or message</h1>
-      <form id="scanForm" class="scanbox" autocomplete="off">
-        <label for="scanInput">Paste a link or an SMS message</label>
-        <textarea id="scanInput" rows="3" maxlength="2048" placeholder="e.g.  http://sbi-kyc-update.xyz/verify   or   Your parcel is held, pay ₹25 at…" required></textarea>
-        <div class="row">
-          <span id="detected" class="muted">Type or paste to scan</span>
-          <span class="spacer"></span>
-          <button type="submit" class="primary" id="scanBtn">Scan</button>
-        </div>
-        <div class="examples" aria-label="Example inputs">
-          <span class="muted">Examples (handwritten demo samples):</span>
-          <span id="exampleBtns"></span>
-        </div>
-      </form>
-
-      <div id="result" class="result" hidden>
-        <div id="verdictCard" class="verdict">
-          <div class="gauge" aria-hidden="true">
-            <svg viewBox="0 0 120 70"><path class="g-track" d="M10 62a50 50 0 0 1 100 0"/><path id="gaugeArc" class="g-val" d="M10 62a50 50 0 0 1 100 0" pathLength="100"/></svg>
-            <div class="g-num"><span id="riskNum">0</span><small>/100 risk</small></div>
+    <!-- ================= SCAN / HOME ================= -->
+    <section id="page-scan" class="page">
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow-pill"><i class="dot"></i>On-device · Rules · ML · Llama 3.2 · ExecuTorch</span>
+          <h1>Scams, stopped<br><span class="grad">at the edge.</span></h1>
+          <p class="lede">Paste a suspicious SMS or link. Bastion judges it on this device in milliseconds, explains
+            why in plain English, and tells you what to do next. Nothing leaves the board, so nobody sees what you check.</p>
+          <div class="cta">
+            <a class="btn-primary" href="#scanner" id="ctaScan">Scan a message →</a>
+            <button class="btn-ghost" id="ctaExample" type="button">Try an example: SBI KYC scam</button>
           </div>
-          <div class="v-text">
-            <div id="verdictLabel" class="v-label">SAFE</div>
-            <div class="muted"><span id="channelLabel">URL</span> · confidence <span id="confNum">0</span> · <span id="modelLabel"></span></div>
-            <div class="muted small">Detected in <span id="detectMs">0</span> ms on <span id="resEnv"></span></div>
+          <div class="stats" id="heroStats">
+            <div class="stat"><span class="eyebrow">SMS scams caught</span><b id="statRecall">–</b><small id="statRecallSrc">end-to-end test recall</small></div>
+            <div class="stat"><span class="eyebrow">URL false alarms</span><b id="statFpr">–</b><small id="statFprSrc">on legitimate test links</small></div>
+            <div class="stat"><span class="eyebrow">Scan time (p50)</span><b id="statLat">–</b><small id="statLatSrc">detector latency</small></div>
           </div>
         </div>
 
-        <div class="grid2">
-          <div class="card">
-            <h2>Why</h2>
-            <ul id="chips" class="chips"></ul>
-          </div>
-          <div class="card">
-            <h2>What to do</h2>
-            <ul id="actions" class="checklist"></ul>
+        <div class="hero-visual">
+          <span class="eyebrow-pill floating">Pi 5 twin · drag to turn</span>
+          <div class="halo" aria-hidden="true"></div>
+          <div id="heroCanvas" class="board-host" role="img" aria-label="3D model of the Bastion Pi 5 twin board"></div>
+          <div class="device-card">
+            <div class="device-row">
+              <span class="live"><i class="dot red"></i>This device</span>
+              <b id="devArch">–</b>
+              <span class="sep"></span>
+              <span id="devCores" class="muted">–</span>
+              <span id="devMem" class="muted">–</span>
+              <span id="devNet" class="net">–</span>
+            </div>
+            <div class="device-row small muted"><span id="devEnv">–</span><span class="spacer"></span><span id="devModels">–</span></div>
           </div>
         </div>
-
-        <div class="card">
-          <h2>AI explanation <span class="tag" id="explainTag">Llama 3.2 1B · ExecuTorch · on-device</span></h2>
-          <p class="muted small">The verdict comes from the detector. The AI only explains it, and its text is checked before it is shown.</p>
-          <p id="explanation" class="explanation" aria-live="polite"></p>
-          <p id="explainNote" class="muted small"></p>
-        </div>
-
-        <details class="card">
-          <summary>Raw evidence (JSON)</summary>
-          <pre id="rawJson"></pre>
-        </details>
       </div>
+
+      <!-- scanner -->
+      <section id="scanner" class="block" aria-labelledby="scanTitle">
+        <span class="eyebrow">Scanner</span>
+        <h2 id="scanTitle">Is this message safe?</h2>
+        <p class="sub">Paste anything. A single link is checked as a URL; everything else as an SMS, including the links inside it.</p>
+        <form id="scanForm" class="scancard" autocomplete="off">
+          <label for="scanInput" class="sr">Link or SMS message</label>
+          <textarea id="scanInput" rows="3" maxlength="2048" placeholder="Dear customer, your account will be blocked today. Update KYC at http://…" required></textarea>
+          <div class="scanbar">
+            <span id="detected" class="muted small">Type or paste to scan · Ctrl+Enter</span>
+            <span class="spacer"></span>
+            <button type="submit" class="btn-primary" id="scanBtn">Scan</button>
+          </div>
+        </form>
+
+        <div id="result" hidden>
+          <div class="cards3">
+            <article id="verdictCard" class="rcard verdict">
+              <div class="rhead"><span class="eyebrow">#verdict</span><span id="verdictLabel" class="pill">–</span></div>
+              <div class="bignum"><b id="riskNum">0</b><span>/100 risk</span></div>
+              <div class="riskbar" aria-hidden="true"><i id="riskFill"></i><em style="left:35%"></em><em style="left:70%"></em></div>
+              <div class="rmeta"><span><span id="channelLabel">SMS</span> · confidence <span id="confNum">0</span></span><span id="modelLabel" class="mono"></span></div>
+              <div class="rfoot"><span>Detected in <b id="detectMs">0</b> ms</span><span id="resEnv" class="chip sm"></span></div>
+            </article>
+            <article class="rcard">
+              <div class="rhead"><span class="eyebrow">#why it was flagged</span></div>
+              <ul id="chips" class="reasons"></ul>
+            </article>
+            <article class="rcard">
+              <div class="rhead"><span class="eyebrow">#what to do</span></div>
+              <ul id="actions" class="checklist"></ul>
+            </article>
+          </div>
+
+          <article class="rcard wide">
+            <div class="rhead"><span class="eyebrow">#ai explanation</span><span class="chip sm" id="explainTag">Llama 3.2 1B · ExecuTorch · on-device</span></div>
+            <p class="muted small">The verdict comes from the detector. The AI only explains it, and its text is checked word by word before it is shown.</p>
+            <p id="explanation" class="explanation" aria-live="polite"></p>
+            <p id="explainNote" class="muted small"></p>
+            <details><summary>Raw evidence (JSON)</summary><pre id="rawJson"></pre></details>
+          </article>
+        </div>
+      </section>
+
+      <!-- presets -->
+      <section class="block" aria-labelledby="presetTitle">
+        <span class="eyebrow">Story presets</span>
+        <h2 id="presetTitle">Start with a scam type</h2>
+        <p class="sub">Handwritten demo samples, not benchmark data.</p>
+        <div id="presets" class="presets"></div>
+      </section>
+
+      <!-- recent -->
+      <section class="block" aria-labelledby="recentTitle">
+        <div class="row-between">
+          <div><span class="eyebrow">On this device</span><h2 id="recentTitle">Recent scans</h2></div>
+          <a href="#/history" class="link">View all history →</a>
+        </div>
+        <div id="recent" class="cards3"></div>
+      </section>
     </section>
 
-    <!-- HISTORY -->
+    <!-- ================= HISTORY ================= -->
     <section id="page-history" class="page" hidden aria-labelledby="histTitle">
-      <div class="row">
-        <h1 id="histTitle">History</h1>
-        <span class="spacer"></span>
-        <label class="muted small"><input type="checkbox" id="privacyToggle"> Privacy mode (store hashes only)</label>
-      </div>
-      <div class="row toolbar">
-        <label for="histFilter" class="muted">Verdict</label>
+      <span class="eyebrow">Stored only on this device</span>
+      <div class="row-between"><h2 id="histTitle" class="pagetitle">History</h2>
+        <label class="muted small toggle"><input type="checkbox" id="privacyToggle"> Privacy mode: store hashes only</label></div>
+      <div class="toolbar">
+        <label for="histFilter" class="muted small">Verdict</label>
         <select id="histFilter"><option value="">All</option><option>MALICIOUS</option><option>SUSPICIOUS</option><option>SAFE</option></select>
         <span class="spacer"></span>
-        <a class="btn" id="csvBtn" href="/api/history.csv" download>Export CSV</a>
-        <button id="clearBtn" class="danger">Clear history</button>
+        <a class="btn-ghost sm" id="csvBtn" href="/api/history.csv" download>Export CSV</a>
+        <button id="clearBtn" class="btn-ghost sm danger">Clear history</button>
       </div>
       <div class="tablewrap"><table class="table"><thead><tr><th>Time</th><th>Type</th><th>Input</th><th>Verdict</th><th>Risk</th><th>Explainer</th></tr></thead><tbody id="histBody"></tbody></table></div>
-      <p class="muted small">Stored only on this device (SQLite). Nothing is uploaded.</p>
+      <p class="muted small">SQLite on this device. Nothing is uploaded.</p>
     </section>
 
-    <!-- DEVICE TWIN -->
+    <!-- ================= DEVICE TWIN ================= -->
     <section id="page-twin" class="page" hidden aria-labelledby="twinTitle">
-      <div class="row">
-        <h1 id="twinTitle">Device Twin</h1>
-        <span class="spacer"></span>
-        <span id="twinEnv" class="envbig">…</span>
-      </div>
+      <span class="eyebrow">Digital twin · live</span>
+      <div class="row-between"><h2 id="twinTitle" class="pagetitle">Raspberry Pi 5 twin</h2><span id="twinEnv" class="envbig">…</span></div>
       <p id="twinNote" class="note"></p>
       <div class="twin">
-        <div id="twinCanvas" class="twin-canvas" role="img" aria-label="3D model of the Pi 5 twin board showing the current pipeline stage"></div>
+        <div class="twin-stage">
+          <div class="halo" aria-hidden="true"></div>
+          <div id="twinCanvas" class="board-host big" role="img" aria-label="3D model of the Pi 5 twin board showing the current pipeline stage"></div>
+        </div>
         <div class="twin-side">
-          <div class="card"><h2>Pipeline</h2><ol id="stages" class="stages"></ol></div>
-          <div class="card"><h2>CPU</h2><div id="cores" class="cores"></div><p class="muted small" id="cpuLimit"></p></div>
-          <div class="card"><h2>Memory</h2><div class="bar"><span id="memBar"></span></div><p class="muted small" id="memText"></p></div>
-          <div class="card"><h2>Models</h2><ul id="modelState" class="kv"></ul></div>
-          <div class="card"><h2>Network</h2><p id="twinNet" class="netbig">…</p><p class="muted small">Checked from the route table, no packets sent.</p></div>
+          <div class="rcard"><div class="rhead"><span class="eyebrow">#pipeline</span></div><ol id="stages" class="stages"></ol></div>
+          <div class="rcard"><div class="rhead"><span class="eyebrow">#cpu</span><span id="cpuLimit" class="muted small"></span></div><div id="cores" class="cores"></div></div>
+          <div class="rcard"><div class="rhead"><span class="eyebrow">#memory</span></div><div class="bar"><span id="memBar"></span></div><p class="muted small" id="memText"></p></div>
+          <div class="rcard"><div class="rhead"><span class="eyebrow">#models</span></div><ul id="modelState" class="kv"></ul></div>
+          <div class="rcard"><div class="rhead"><span class="eyebrow">#network</span></div><p id="twinNet" class="netbig">…</p><p class="muted small">Read from the route table. No packets are sent.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- BENCHMARKS -->
+    <!-- ================= BENCHMARKS ================= -->
     <section id="page-bench" class="page" hidden aria-labelledby="benchTitle">
-      <h1 id="benchTitle">Benchmarks</h1>
-      <p class="note"><b>Honesty rule:</b> every number is tagged with the environment it was measured in.
-        Only <code>raspberry-pi-5</code> numbers are Raspberry Pi 5 performance. <code>arm64-emulated-qemu</code> proves the Arm software runs; its timings are not Pi 5 timings.</p>
+      <span class="eyebrow">Every number has a JSON behind it</span>
+      <h2 id="benchTitle" class="pagetitle">Benchmarks</h2>
+      <p class="note"><b>Honesty rule.</b> Each result carries the environment it was measured in. Only <code>raspberry-pi-5</code>
+        numbers are Raspberry Pi 5 performance; <code>arm64-emulated-qemu</code> proves the Arm software runs, not how fast.</p>
       <div id="benchBody"></div>
     </section>
 
-    <!-- ABOUT -->
+    <!-- ================= ABOUT / METHODOLOGY ================= -->
     <section id="page-about" class="page" hidden aria-labelledby="aboutTitle">
-      <h1 id="aboutTitle">About Bastion</h1>
-      <div class="card">
-        <h2>How it works</h2>
+      <span class="eyebrow">Methodology</span>
+      <h2 id="aboutTitle" class="pagetitle">How Bastion decides</h2>
+      <div class="rcard wide">
         <svg class="arch" viewBox="0 0 760 150" role="img" aria-label="Pipeline: input, features, detectors, risk fusion, verdict; Llama explainer with guard; advice">
-          <g class="a-box"><rect x="4" y="50" width="96" height="44" rx="8"/><text x="52" y="77">URL / SMS</text></g>
-          <g class="a-box"><rect x="124" y="50" width="104" height="44" rx="8"/><text x="176" y="77">Features</text></g>
-          <g class="a-box"><rect x="252" y="50" width="116" height="44" rx="8"/><text x="310" y="72">Rules + ML</text><text x="310" y="87" class="a-sub">detectors</text></g>
-          <g class="a-box hl"><rect x="392" y="50" width="112" height="44" rx="8"/><text x="448" y="72">Risk fusion</text><text x="448" y="87" class="a-sub">verdict (fixed)</text></g>
-          <g class="a-box llm"><rect x="528" y="6" width="150" height="44" rx="8"/><text x="603" y="27">Llama 3.2 1B</text><text x="603" y="41" class="a-sub">ExecuTorch · Arm CPU</text></g>
-          <g class="a-box"><rect x="528" y="98" width="150" height="44" rx="8"/><text x="603" y="124">Advice (rules)</text></g>
-          <g class="a-box hl"><rect x="694" y="50" width="62" height="44" rx="8"/><text x="725" y="77">Guard</text></g>
+          <g class="a-box"><rect x="4" y="50" width="96" height="44" rx="10"/><text x="52" y="77">URL / SMS</text></g>
+          <g class="a-box"><rect x="124" y="50" width="104" height="44" rx="10"/><text x="176" y="77">Features</text></g>
+          <g class="a-box"><rect x="252" y="50" width="116" height="44" rx="10"/><text x="310" y="72">Rules + ML</text><text x="310" y="87" class="a-sub">detectors</text></g>
+          <g class="a-box hl"><rect x="392" y="50" width="112" height="44" rx="10"/><text x="448" y="72">Risk fusion</text><text x="448" y="87" class="a-sub">verdict (fixed)</text></g>
+          <g class="a-box llm"><rect x="528" y="6" width="150" height="44" rx="10"/><text x="603" y="27">Llama 3.2 1B</text><text x="603" y="41" class="a-sub">ExecuTorch · Arm CPU</text></g>
+          <g class="a-box"><rect x="528" y="98" width="150" height="44" rx="10"/><text x="603" y="124">Advice (rules)</text></g>
+          <g class="a-box hl"><rect x="694" y="50" width="62" height="44" rx="10"/><text x="725" y="77">Guard</text></g>
           <g class="a-line"><path d="M100 72h24M228 72h24M368 72h24M504 72c12 0 12-44 24-44M504 72c12 0 12 48 24 48M678 28c10 0 8 32 16 32M678 120c10 0 8-36 16-36"/></g>
         </svg>
-        <p>The detectors decide the verdict and risk score. Llama only writes a short explanation from the detector's evidence. A guard rejects any explanation that contradicts the verdict or invents links or phone numbers, and the deterministic template is shown instead. Llama can never change the verdict.</p>
+        <p>The detectors decide the verdict and the risk score. Llama only writes a short explanation from the detector's evidence.
+          A guard checks the text while it streams and stops it the moment it contradicts the verdict or invents a link or phone
+          number; the deterministic template is shown instead. Llama can never change the verdict.</p>
       </div>
-      <div class="grid2">
-        <div class="card"><h2>Privacy</h2><p>Everything runs on this device. No cloud, no external APIs, no telemetry. History stays in a local SQLite file and can be set to store only hashes, or cleared at any time.</p></div>
-        <div class="card"><h2>Limitations</h2><ul class="plain">
-          <li>SMS model trained on the UCI SMS Spam Collection (older, English, mostly UK); Indian UPI/KYC scams are under-represented.</li>
-          <li>PhiUSIIL's benign URLs are all <code>https://www.</code> homepages, so the URL model only sees the host without scheme or <code>www.</code>, tuned for about 2% false alarms. It catches roughly 3 in 4 phishing links in testing; path tricks are caught by rules.</li>
+      <div class="cards2">
+        <div class="rcard"><div class="rhead"><span class="eyebrow">#privacy</span></div><p>Everything runs on this device: no cloud, no external APIs, no telemetry. History is a local SQLite file that can store only hashes, or be cleared at any time.</p></div>
+        <div class="rcard" id="limits"><div class="rhead"><span class="eyebrow">#limitations</span></div><ul class="plain">
+          <li>SMS model trained on the UCI SMS Spam Collection (older, English, mostly UK). Indian UPI/KYC scams are under-represented.</li>
+          <li>PhiUSIIL's legitimate URLs are all <code>https://www.</code> homepages, so the URL model sees only the host without scheme or <code>www.</code>, tuned for about 2% false alarms. It catches roughly 3 in 4 phishing links in testing; path tricks are caught by rules.</li>
           <li>Timings from the emulated twin are not Raspberry Pi 5 timings.</li></ul></div>
       </div>
-      <div class="card"><h2>Model cards</h2><div id="modelCards" class="muted">Loading…</div></div>
-      <p class="muted small">Bastion (PS3 edge AI scam guard), Bharat AI-SoC Challenge 2026-27. Not related to Microsoft's Azure Bastion. 3D board drawn from simple shapes; three.js (MIT) is bundled locally.</p>
+      <div class="rcard wide"><div class="rhead"><span class="eyebrow">#model cards</span></div><div id="modelCards" class="muted">Loading…</div></div>
+      <p class="muted small">Bastion (PS3 edge AI scam guard), Bharat AI-SoC Challenge 2026-27. Not related to Microsoft's Azure Bastion.
+        The 3D board is drawn from simple shapes. Bundled locally: three.js (MIT), Space Grotesk, Inter and JetBrains Mono (SIL OFL).</p>
     </section>
   </main>
+
+  <footer class="foot">
+    <span>Bastion runs fully offline. Verdicts come from the detector; the AI only explains.</span>
+    <span id="footEnv" class="mono"></span>
+  </footer>
 
   <script src="/static/app.js"></script>
   <script type="module" src="/static/twin.js"></script>

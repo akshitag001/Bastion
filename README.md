@@ -16,9 +16,9 @@ No cloud. No telemetry. Nothing leaves the device.
 *Bharat AI-SoC Challenge 2026-27 (Arm) · PS3: On-Device Threat, Phishing & Scam Detection*
 *(Not related to Microsoft's "Azure Bastion".)*
 
-<img src="docs/screenshots/scan-scam-sms.png" alt="Bastion flags an SBI KYC scam SMS as MALICIOUS (risk 96/100), served from the offline arm64 Pi 5 twin" width="900">
+<img src="docs/screenshots/home.png" alt="Bastion home: headline 'Scams, stopped at the edge', live stat cards and the 3D Pi 5 twin board" width="900">
 
-<sub>Real screenshot: the web app served from the <b>aarch64 Pi 5 digital twin with no network</b> (note the <code>arm64-emulated-qemu</code> and <code>OFFLINE</code> badges).</sub>
+<sub>Real screenshots of the running app; every number on the page is read from the result JSONs in <code>benchmarks/results/</code>.</sub>
 
 </div>
 
@@ -41,19 +41,17 @@ Paste a link or an SMS. In milliseconds Bastion gives you:
 
 ## 📸 Screenshots
 
-All captured from the real app running inside the **offline arm64 Pi 5 twin** (`docker compose up`).
-
-| 🍓 Device Twin (3D, live) | 📱 On a phone |
+| 🔎 A scam SMS, judged in milliseconds | 📱 On a phone |
 |---|---|
-| <img src="docs/screenshots/device-twin.png" alt="3D Pi 5 twin board with live CPU, memory, pipeline stage, model state and OFFLINE network status" width="560"> | <img src="docs/screenshots/phone-scan.png" alt="Bastion scan result on a phone-sized screen" width="230"> |
+| <img src="docs/screenshots/scan-scam-sms.png" alt="SBI KYC scam SMS rated Malicious 96/100 with reasons and actions" width="560"> | <img src="docs/screenshots/phone-scan.png" alt="Scan result on a phone-sized screen" width="230"> |
 
-| ✅ A genuine link stays SAFE | 📊 Honest benchmarks |
+| ✅ A genuine link stays SAFE | 🍓 Raspberry Pi 5 twin (3D, live) |
 |---|---|
-| <img src="docs/screenshots/scan-safe-url.png" alt="IRCTC deep link rated SAFE" width="420"> | <img src="docs/screenshots/bench.png" alt="Benchmarks page grouped by environment tag" width="420"> |
+| <img src="docs/screenshots/scan-safe-url.png" alt="IRCTC deep link rated Safe" width="420"> | <img src="docs/screenshots/device-twin.png" alt="3D Pi 5 twin board with live CPU, memory, pipeline stage, model state and network status" width="420"> |
 
-| 🕘 Local history (privacy mode, CSV export) | ℹ️ About & model cards |
+| 📊 Honest benchmarks | 🕘 Local history |
 |---|---|
-| <img src="docs/screenshots/history.png" alt="Scan history table" width="420"> | <img src="docs/screenshots/about.png" alt="About page with architecture and model cards" width="420"> |
+| <img src="docs/screenshots/bench.png" alt="Benchmarks page with end-to-end metrics" width="420"> | <img src="docs/screenshots/history.png" alt="Scan history table" width="420"> |
 
 **The twin, proven from the terminal:** `uname -m` = `aarch64`, Pi 5 limits, **no route to the internet**, real verdicts:
 
@@ -146,7 +144,7 @@ Now it comes from 5-fold out-of-fold predictions over 422 scams: FPR 0.163 → *
 ## 🚀 Quick start (60 seconds)
 
 ```bash
-git clone <this repo> bastion && cd bastion
+git clone https://github.com/akshitag001/Bastion.git && cd Bastion
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt && pip install -e .
 bastion serve                                         # → http://127.0.0.1:8080
@@ -187,16 +185,25 @@ source .venv/bin/activate && bastion status   # → environment: raspberry-pi-5
 
 ## 🧠 Llama 3.2 1B on ExecuTorch
 
-1. Accept the Llama 3.2 licence for [`meta-llama/Llama-3.2-1B-Instruct`](https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct) and create a read token.
-2. Export (x86 container, versioned config [`twin/export/llama3_2_1b_8da4w.yaml`](twin/export/llama3_2_1b_8da4w.yaml)):
-   ```bash
-   export HF_TOKEN=<token>               # PowerShell: $env:HF_TOKEN = "<token>"   (never written to disk)
-   python twin/twinctl.py export         # → models/llama/llama3_2_1b_8da4w.pte + tokenizer.model
-   ```
-3. `bastion status` → `Llama (ExecuTorch): READY, ok (runtime backend)`. The model is loaded once and kept resident.
-   *(The runtime backend is unit-tested with a stand-in model; its first run with the real `.pte` is pending the licence approval.)*
+**Working:** Llama 3.2 1B Instruct exported with **ExecuTorch 1.6.0** (8da4w, XNNPACK, KV cache), loaded once and kept
+resident, streaming guarded explanations into the UI.
 
-Verified versions, commands and API details: [`docs/EXECUTORCH_NOTES.md`](docs/EXECUTORCH_NOTES.md).
+| Measured (`x86-native`, `edge_x86-native_20261123_182544.json`) | |
+|---|---|
+| model load (once) | 3.05 s |
+| explanation, p50 | 4.29 s (verdict is instant; the explanation streams afterwards) |
+| decode | 35.25 tokens/s |
+| guard fallbacks | 1 of 5: the prompt-injection SMS, rejected mid-stream, verdict unchanged |
+
+Export it yourself (Windows/Linux/macOS, no Docker needed):
+```bash
+# weights: Meta's original checkpoint (needs licence approval) or a Hugging Face snapshot of Llama-3.2-1B-Instruct
+python twin/export/export_local.py --hf-dir models/llama/<hf-snapshot>     # or --meta-dir <folder with consolidated.00.pth>
+bastion status    # -> Llama (ExecuTorch): READY, ok (runtime backend)
+```
+Container route: `python twin/twinctl.py export` (needs `HF_TOKEN` and approved access). The weights are not in this
+repository. Details, versions and findings (including why the 2024 pre-exported `.pte` fails on the 1.6.0 runtime):
+[`docs/EXECUTORCH_NOTES.md`](docs/EXECUTORCH_NOTES.md).
 
 ## 🔒 Privacy & security
 
@@ -212,7 +219,7 @@ src/bastion/          features · detectors · fusion · explain (Llama, guard) 
 training/             trainers: validation-only selection, calibration, operating points, end-to-end eval
 benchmarks/results/   every number in this README (JSON + logs); archive/ = superseded runs cited in docs
 twin/                 arm64 Dockerfile, Pi 5 profile, twinctl, export container, nginx
-docs/                 DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
+docs/                 REPORT · DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
 tests/                53 tests: features, detectors, guard, injection, Llama backends, API, UI, training
 ```
 
@@ -222,7 +229,8 @@ tests/                53 tests: features, detectors, guard, injection, Llama bac
 - **URL recall is 0.737** at a 2 % false-alarm budget: lexical offline features can't do better on this data.
   Phase 2: an on-device phishing blocklist snapshot (Safe-Browsing-style), opt-in page-content features, better benign data.
 - **SMS data is dated and mostly UK English;** Indian UPI/KYC/courier scams are under-represented. Phase 2: an Indian test set.
-- Llama export is pending a Hugging Face licence approval; explanations currently fall back to the deterministic template.
+- Llama is measured on x86 only so far; the run inside the arm64 twin and on a real Pi 5 is next.
+- A 1B model writes short, sometimes generic explanations; the detector's "why" list carries the specific evidence.
 
 ## 📜 Data & credits
 

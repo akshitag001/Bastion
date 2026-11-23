@@ -1,12 +1,14 @@
 /* Device Twin: a 3D board drawn from simple primitives (no logos, no product images).
-   Renders only while the Twin page is visible so it never competes with scans for CPU. */
+   One renderer, moved between the home hero and the Device page. It renders only while one of them is visible,
+   so it never competes with scans for CPU. */
 import * as THREE from "/static/vendor/three.module.min.js";
 
-const host = document.getElementById("twinCanvas");
+const HOSTS = { scan: "heroCanvas", twin: "twinCanvas" };
+let host = null;
 let renderer, scene, camera, board, soc, socMat, led, ledMat, fan, pulse, pathCurve, visible = false;
 let stage = "idle", verdict = null, pulseT = 0, dragging = false, lastX = 0, rotY = -0.5, raf = 0;
 
-const COLORS = { SAFE: 0x3fb950, SUSPICIOUS: 0xe3b341, MALICIOUS: 0xf85149, idle: 0x2b6cb0 };
+const COLORS = { SAFE: 0x2fb35f, SUSPICIOUS: 0xf0a020, MALICIOUS: 0xe23b22, idle: 0x6d6ae8 };
 // path along the board: input (ports) -> features -> detector -> fusion (SoC) -> Llama (RAM) -> advice (LED)
 const STAGE_T = { detector: 0.3, fusion: 0.5, llama: 0.72, advice: 0.92, idle: 0, "loading-llama": 0.72 };
 
@@ -82,16 +84,17 @@ function init() {
     new THREE.Vector3(-0.6, 0.35, 0.9), new THREE.Vector3(1.15, 0.3, -0.7), new THREE.Vector3(-1.5, 0.3, 1.6),
     new THREE.Vector3(-3.9, 0.3, 1.8)]);
   const tube = new THREE.Mesh(new THREE.TubeGeometry(pathCurve, 80, 0.025, 6, false),
-    new THREE.MeshBasicMaterial({ color: 0x4cc2ff, transparent: true, opacity: 0.35 }));
+    new THREE.MeshBasicMaterial({ color: 0x8f8cf0, transparent: true, opacity: 0.55 }));
   board.add(tube);
-  pulse = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshBasicMaterial({ color: 0x4cc2ff }));
+  pulse = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf08c00 }));
   board.add(pulse);
 
   const el = renderer.domElement;
   el.addEventListener("pointerdown", e => { dragging = true; lastX = e.clientX; el.setPointerCapture(e.pointerId); });
   el.addEventListener("pointermove", e => { if (dragging) { rotY += (e.clientX - lastX) * 0.01; lastX = e.clientX; } });
   el.addEventListener("pointerup", () => { dragging = false; });
-  new ResizeObserver(resize).observe(host);
+  const ro = new ResizeObserver(resize);
+  Object.values(HOSTS).forEach(id => ro.observe(document.getElementById(id)));
   resize();
   return true;
 }
@@ -103,7 +106,7 @@ function resize() {
   camera.aspect = w / h; camera.updateProjectionMatrix();
   // fit the whole board (about 10 x 7.5 units incl. ports) for any aspect ratio
   const vfov = THREE.MathUtils.degToRad(camera.fov), hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
-  const dist = Math.max(5.0 / Math.tan(hfov / 2), 3.8 / Math.tan(vfov / 2));
+  const dist = Math.max(6.1 / Math.tan(hfov / 2), 4.6 / Math.tan(vfov / 2));   // margin for the rotating diagonal
   camera.position.copy(new THREE.Vector3(0, 6.2, 7.4).normalize().multiplyScalar(dist));
   camera.lookAt(0, 0, 0);
 }
@@ -130,16 +133,23 @@ function frame() {
 
 let ready = false;
 window.addEventListener("bastion:page", e => {
-  visible = e.detail === "twin";
-  if (visible && !ready) ready = init();
-  if (visible && ready && !raf) raf = requestAnimationFrame(frame);
+  const id = HOSTS[e.detail];
+  visible = !!id;
+  if (!visible) return;
+  host = document.getElementById(id);
+  if (!ready) ready = init();
+  else if (renderer && renderer.domElement.parentElement !== host) { host.append(renderer.domElement); resize(); }
+  if (ready && !raf) raf = requestAnimationFrame(frame);
 });
 window.addEventListener("bastion:live", e => {
   stage = e.detail.stage.stage;
   if (e.detail.stage.verdict) verdict = e.detail.stage.verdict;
 });
 // the page event may have fired before this module loaded
-if (location.hash.startsWith("#/twin")) window.dispatchEvent(new CustomEvent("bastion:page", { detail: "twin" }));
+{
+  const page = (location.hash.match(/^#\/(\w+)/) || [])[1] || "scan";
+  window.dispatchEvent(new CustomEvent("bastion:page", { detail: page }));
+}
 // Snapshot hook for automated screenshots: headless browsers may not composite WebGL canvases, so this renders one
 // frame, reads the pixels back with readPixels and overlays them as an <img> (exactly what the renderer drew).
 window.__twinSnapshot = () => {
