@@ -228,7 +228,7 @@ repository. Details, versions and findings (including why the 2024 pre-exported 
 
 ```
 src/bastion/          features · detectors · fusion · explain (Llama, guard) · advice · server · env · web UI
-training/             trainers: validation-only selection, calibration, operating points, end-to-end eval
+training/             trainers: validation-only selection, calibration, operating points, end-to-end eval.
 benchmarks/results/   every number in this README (JSON + logs); archive/ = superseded runs cited in docs
 twin/                 arm64 Dockerfile, Pi 5 profile, twinctl, export container, nginx
 docs/                 Final Project Report (PDF) · REPORT · DATASETS · TWIN · EXECUTORCH_NOTES · PROGRESS · screenshots
