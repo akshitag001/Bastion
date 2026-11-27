@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ Bastion (PS3 edge AI scam guard)
+# 🛡️ Bastion 
 
 ### *The offline AI guard on your edge device.*
 
